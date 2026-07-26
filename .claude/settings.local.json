@@ -8,7 +8,8 @@
       "Skill(artifact-design:*)",
       "WebSearch",
       "PowerShell(Select-String -Path \"C:\\\\Users\\\\napea\\\\Desktop\\\\Amana web app bi-idniLlah\\\\app\\\\node_modules\\\\ai\\\\README.md\" -Pattern \"streamText|toUIMessageStream|toTextStream\" -Context 0,6 | Select-Object -First 8 | ForEach-Object { $_.Line; $_.Context.PostContext -join \"`n\"; \"---\" })",
-      "PowerShell(Invoke-RestMethod -Uri \"http://localhost:3000/api/conversation\" -Method Post -ContentType \"application/json\" -Body '{\"messages\":[{\"role\":\"user\",\"content\":\"Je suis perdu\"}]}')"
+      "PowerShell(Invoke-RestMethod -Uri \"http://localhost:3000/api/conversation\" -Method Post -ContentType \"application/json\" -Body '{\"messages\":[{\"role\":\"user\",\"content\":\"Je suis perdu\"}]}')",
+      "PowerShell(cd \"C:\\\\Users\\\\napea\\\\Desktop\\\\Amana web app bi-idniLlah\"; Write-Output \"user.name : $\\(git config user.name\\)\"; Write-Output \"user.email: $\\(git config user.email\\)\"; Write-Output \"helper    : $\\(git config credential.helper\\)\"; Write-Output \"remote    : $\\(git remote -v\\)\")"
     ]
   }
 }
