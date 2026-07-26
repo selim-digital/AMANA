@@ -1,23 +1,41 @@
-# Dépendances et build
-node_modules/
-.next/
-out/
-build/
-dist/
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Environnement — ne jamais commiter de clés
-.env
-.env.local
-.env*.local
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
-# Système
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
 .DS_Store
-Thumbs.db
-*.log
-npm-debug.log*
+*.pem
 
-# Éditeurs / outils
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
 .vercel
-.turbo
+
+# typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -5,11 +5,11 @@ PWA Next.js + Supabase + Claude API. Bi-idniLlah.
 
 ## Documents de référence
 
-- [`../docs/01_AMANA_COMPILATION.md`](../docs/01_AMANA_COMPILATION.md) — référence produit unique (arbitrages en §14)
-- [`../docs/02_STACK.md`](../docs/02_STACK.md) — choix techniques
-- [`../docs/03_ROADMAP_MVP.md`](../docs/03_ROADMAP_MVP.md) — sprints
-- [`../docs/livrables/`](../docs/livrables/) — les 10 specs MVP (scope, flows, écrans, données, mémoire, IA, dashboard, API, backlog, sprints)
-- [`../design/amana-design-system.html`](../design/amana-design-system.html) — design system V3 (tokens repris dans `src/app/globals.css`)
+- [`./docs/01_AMANA_COMPILATION.md`](./docs/01_AMANA_COMPILATION.md) — référence produit unique (arbitrages en §14)
+- [`./docs/02_STACK.md`](./docs/02_STACK.md) — choix techniques
+- [`./docs/03_ROADMAP_MVP.md`](./docs/03_ROADMAP_MVP.md) — sprints
+- [`./docs/livrables/`](./docs/livrables/) — les 10 specs MVP (scope, flows, écrans, données, mémoire, IA, dashboard, API, backlog, sprints)
+- [`./design/amana-design-system.html`](./design/amana-design-system.html) — design system V3 (tokens repris dans `src/app/globals.css`)
 
 ## Démarrage
 
