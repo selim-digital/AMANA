@@ -1,0 +1,23 @@
+# Dépendances et build
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# Environnement — ne jamais commiter de clés
+.env
+.env.local
+.env*.local
+
+# Système
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+
+# Éditeurs / outils
+.vercel
+.turbo
+*.tsbuildinfo
+next-env.d.ts

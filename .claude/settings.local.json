@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__8dcf0cf1-4478-47db-8433-d67d8bf4aa25__get_file_metadata",
+      "mcp__8dcf0cf1-4478-47db-8433-d67d8bf4aa25__search_files",
+      "mcp__8dcf0cf1-4478-47db-8433-d67d8bf4aa25__read_file_content",
+      "Skill(artifact-design)",
+      "Skill(artifact-design:*)",
+      "WebSearch",
+      "PowerShell(Select-String -Path \"C:\\\\Users\\\\napea\\\\Desktop\\\\Amana web app bi-idniLlah\\\\app\\\\node_modules\\\\ai\\\\README.md\" -Pattern \"streamText|toUIMessageStream|toTextStream\" -Context 0,6 | Select-Object -First 8 | ForEach-Object { $_.Line; $_.Context.PostContext -join \"`n\"; \"---\" })",
+      "PowerShell(Invoke-RestMethod -Uri \"http://localhost:3000/api/conversation\" -Method Post -ContentType \"application/json\" -Body '{\"messages\":[{\"role\":\"user\",\"content\":\"Je suis perdu\"}]}')"
+    ]
+  }
+}

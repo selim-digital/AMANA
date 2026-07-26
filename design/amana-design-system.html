@@ -1,0 +1,971 @@
+<title>AMANA — Design System V3</title>
+<style>
+  :root{
+    --paper:#F5F1E8;
+    --surface:#FDFBF6;
+    --surface-2:#EFE9DC;
+    --ink:#161310;
+    --ink-soft:#5E5749;
+    --ink-faint:#8E8574;
+    --line:rgba(22,19,16,.14);
+    --gold:#C2A05C;
+    --gold-deep:#96793E;
+    --gold-soft:#EADDBE;
+    --stone:#D8C3A5;
+    --dark-panel:#12100D;
+    --dark-panel-text:#F0EAE0;
+    --shadow:0 24px 60px rgba(35,28,16,.14);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#12100D;
+      --surface:#1B1814;
+      --surface-2:#242019;
+      --ink:#F0EAE0;
+      --ink-soft:#B5AB99;
+      --ink-faint:#877E6D;
+      --line:rgba(240,234,224,.14);
+      --gold:#CBA967;
+      --gold-deep:#E0C288;
+      --gold-soft:#3A3222;
+      --dark-panel:#0C0B09;
+      --dark-panel-text:#F0EAE0;
+      --shadow:0 24px 60px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="light"]{
+    --paper:#F5F1E8; --surface:#FDFBF6; --surface-2:#EFE9DC;
+    --ink:#161310; --ink-soft:#5E5749; --ink-faint:#8E8574;
+    --line:rgba(22,19,16,.14);
+    --gold:#C2A05C; --gold-deep:#96793E; --gold-soft:#EADDBE;
+    --stone:#D8C3A5; --dark-panel:#12100D; --dark-panel-text:#F0EAE0;
+    --shadow:0 24px 60px rgba(35,28,16,.14);
+  }
+  :root[data-theme="dark"]{
+    --paper:#12100D; --surface:#1B1814; --surface-2:#242019;
+    --ink:#F0EAE0; --ink-soft:#B5AB99; --ink-faint:#877E6D;
+    --line:rgba(240,234,224,.14);
+    --gold:#CBA967; --gold-deep:#E0C288; --gold-soft:#3A3222;
+    --stone:#D8C3A5; --dark-panel:#0C0B09; --dark-panel-text:#F0EAE0;
+    --shadow:0 24px 60px rgba(0,0,0,.5);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .serif{font-family:"Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,Georgia,serif}
+  .wordmark{
+    font-weight:800;
+    letter-spacing:.38em;
+    text-indent:.38em; /* recentre optiquement */
+  }
+
+  .wrap{max-width:1060px;margin:0 auto;padding:0 24px}
+
+  /* ---------- nav ---------- */
+  nav{
+    position:sticky;top:0;z-index:50;
+    background:color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  nav .wrap{display:flex;align-items:center;gap:22px;height:56px}
+  nav .brand{display:flex;align-items:center;gap:10px;font-size:13px}
+  nav .brand svg{width:22px;height:22px}
+  nav a{
+    color:var(--ink-soft);text-decoration:none;font-size:12.5px;
+    letter-spacing:.08em;text-transform:uppercase;
+  }
+  nav a:hover,nav a:focus-visible{color:var(--gold-deep)}
+  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:2px}
+  nav .links{display:flex;gap:18px;margin-left:auto;overflow-x:auto}
+
+  /* ---------- hero ---------- */
+  header.hero{
+    background:var(--dark-panel);
+    color:var(--dark-panel-text);
+    padding:96px 0 88px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero .wrap{position:relative;display:flex;flex-direction:column;gap:34px}
+  .hero .mark{width:96px;height:96px}
+  .hero h1{
+    font-size:clamp(44px,7vw,76px);
+    margin:0;
+    line-height:1.05;
+    color:var(--dark-panel-text);
+  }
+  .hero .motto{
+    font-size:14px;letter-spacing:.28em;text-transform:uppercase;
+    color:#B9A67F;line-height:2.1;
+  }
+  .hero .motto .g{color:#CBA967}
+  .hero p.lead{
+    max-width:52ch;font-size:18px;color:#CFC7B8;margin:0;
+  }
+  .hero-path{position:absolute;inset:auto 0 0 0;width:100%;height:150px;opacity:.9;pointer-events:none}
+  @keyframes drawpath{from{stroke-dashoffset:900}to{stroke-dashoffset:0}}
+  .hero-path .trail{animation:drawpath 2.4s ease-out both}
+  @media (prefers-reduced-motion: reduce){
+    .hero-path .trail{animation:none}
+  }
+
+  /* ---------- chapters ---------- */
+  section{padding:84px 0 10px}
+  .eyebrow{
+    font-size:12px;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--gold-deep);margin:0 0 10px;font-weight:600;
+  }
+  h2{
+    font-size:clamp(30px,4vw,42px);
+    margin:0 0 14px;line-height:1.15;text-wrap:balance;
+  }
+  .intro{max-width:62ch;color:var(--ink-soft);margin:0 0 40px;font-size:16.5px}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:22px;
+    overflow:hidden;
+  }
+  .pad{padding:28px}
+  .caption{
+    font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-faint);
+  }
+
+  /* ---------- logo section ---------- */
+  .logo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}
+  .logo-tile{
+    border-radius:22px;border:1px solid var(--line);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:18px;padding:44px 20px 30px;min-height:230px;
+  }
+  .logo-tile svg{width:96px;height:96px}
+  .logo-tile .caption{text-align:center}
+  .t-ivory{background:#F5F1E8;color:#161310}
+  .t-ivory .caption{color:#8E8574}
+  .t-ink{background:#12100D;color:#F0EAE0}
+  .t-ink .caption{color:#877E6D}
+  .t-gold{background:linear-gradient(150deg,#CBA967,#96793E);color:#12100D}
+  .t-gold .caption{color:rgba(18,16,13,.65)}
+  .construction{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+  .construction .card{display:flex;flex-direction:column}
+  .construction .fig{flex:1;display:flex;align-items:center;justify-content:center;padding:34px}
+  .construction .fig svg{width:170px;height:170px}
+  .rule-list{margin:0;padding:0 28px 26px;list-style:none;color:var(--ink-soft);font-size:14.5px}
+  .rule-list li{padding:9px 0;border-top:1px solid var(--line)}
+  .rule-list li:first-child{border-top:none}
+  .rule-list b{color:var(--ink)}
+
+  /* ---------- color ---------- */
+  .swatch-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:14px}
+  .swatch{
+    border-radius:18px;border:1px solid var(--line);
+    min-height:150px;display:flex;flex-direction:column;justify-content:flex-end;
+    padding:14px 16px;
+  }
+  .swatch .name{font-weight:650;font-size:14px}
+  .swatch .hex{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:12px;opacity:.75}
+  .scale{display:flex;border-radius:14px;overflow:hidden;border:1px solid var(--line);margin:6px 0 26px}
+  .scale div{flex:1;height:46px}
+  .usage{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:8px}
+  .usage .card{padding:20px 22px}
+  .usage h4{margin:0 0 6px;font-size:15px}
+  .usage p{margin:0;font-size:14px;color:var(--ink-soft)}
+
+  /* ---------- typography ---------- */
+  .type-specimen{display:grid;gap:0}
+  .type-row{
+    display:grid;grid-template-columns:190px 1fr;gap:24px;align-items:baseline;
+    padding:22px 0;border-top:1px solid var(--line);
+  }
+  .type-row:first-child{border-top:none}
+  .type-row .meta{font-size:12.5px;color:var(--ink-faint);letter-spacing:.06em}
+  @media (max-width:640px){.type-row{grid-template-columns:1fr;gap:6px}}
+
+  /* ---------- icons ---------- */
+  .icon-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+  .icon-cell{
+    background:var(--surface);border:1px solid var(--line);border-radius:18px;
+    display:flex;flex-direction:column;align-items:center;gap:14px;
+    padding:30px 12px 22px;
+  }
+  .icon-cell svg{width:56px;height:56px;color:var(--ink)}
+  .icon-cell .nm{font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft)}
+  .spec-note{font-size:13.5px;color:var(--ink-faint);margin-top:16px}
+
+  /* ---------- worlds ---------- */
+  .world{margin-bottom:34px}
+  .world .art{display:block;width:100%;height:auto;border-radius:22px 22px 0 0}
+  .world .legend{
+    display:flex;flex-wrap:wrap;gap:6px 26px;align-items:baseline;
+    padding:18px 26px 20px;border:1px solid var(--line);border-top:none;
+    border-radius:0 0 22px 22px;background:var(--surface);
+  }
+  .world .legend h3{margin:0;font-size:19px}
+  .world .legend p{margin:0;font-size:14px;color:var(--ink-soft)}
+  .world .legend .caption{margin-left:auto}
+
+  /* ---------- screens ---------- */
+  .screens{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:26px;align-items:start}
+  .phone{
+    width:100%;max-width:352px;margin:0 auto;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:42px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .phone .screen-label{text-align:center;padding:14px 0 4px}
+  .p-head{display:flex;align-items:center;justify-content:space-between;padding:22px 24px 6px}
+  .p-head .wordmark{font-size:15px}
+  .avatar{
+    width:34px;height:34px;border-radius:50%;
+    border:1.6px solid var(--ink);
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;
+  }
+  .p-body{padding:8px 20px 26px;display:flex;flex-direction:column;gap:14px}
+  .p-body h3{margin:2px 0 0;font-size:24px;line-height:1.2}
+  .p-sub{font-size:13.5px;color:var(--ink-faint);margin:0}
+
+  .intention{
+    border-left:3px solid var(--gold);
+    background:var(--surface-2);
+    border-radius:0 16px 16px 0;
+    padding:14px 16px;
+    font-size:15px;
+  }
+  .intention .caption{display:block;margin-bottom:4px}
+
+  .prio{display:flex;flex-direction:column;gap:8px}
+  .prio-item{
+    display:flex;align-items:center;gap:12px;
+    background:var(--surface-2);border-radius:16px;padding:13px 14px;
+    font-size:14px;
+  }
+  .prio-item.main{background:var(--gold-soft);font-weight:650;font-size:15px}
+  .ring{
+    width:20px;height:20px;border-radius:50%;flex:none;
+    border:2px solid var(--ink-faint);
+  }
+  .prio-item.main .ring{border-color:var(--gold-deep)}
+  .prio-item .due{margin-left:auto;font-size:12px;color:var(--ink-faint)}
+
+  .proj{
+    background:var(--dark-panel);color:var(--dark-panel-text);
+    border-radius:20px;padding:18px 18px 16px;
+  }
+  .proj .caption{color:#877E6D}
+  .proj h4{margin:6px 0 12px;font-size:17px;font-weight:650}
+  .track{height:6px;background:rgba(240,234,224,.18);border-radius:99px;overflow:hidden}
+  .track i{display:block;height:100%;background:var(--gold);border-radius:99px}
+  .proj .next{font-size:13px;color:#CFC7B8;margin-top:12px}
+  .proj .next b{color:var(--dark-panel-text);font-weight:600}
+
+  .kpis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .kpi{
+    background:var(--surface-2);border-radius:16px;padding:14px 6px 12px;
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+  }
+  .kpi svg{width:58px;height:58px}
+  .kpi .lbl{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+  .kpi .val{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+
+  .btn{
+    display:block;text-align:center;
+    background:var(--ink);color:var(--paper);
+    border-radius:99px;padding:14px;
+    font-weight:650;font-size:13.5px;letter-spacing:.14em;text-transform:uppercase;
+  }
+  .btn.gold{background:var(--gold);color:#12100D}
+
+  /* onboarding phone */
+  .ob-sky{position:relative}
+  .ob-sky svg{display:block;width:100%;height:auto}
+  .ob-progress{
+    display:flex;gap:5px;justify-content:center;padding:14px 0 2px;
+  }
+  .ob-progress i{width:16px;height:3px;border-radius:2px;background:var(--line)}
+  .ob-progress i.on{background:var(--gold)}
+  .question .caption{display:block;margin-bottom:6px}
+  .q-title{font-size:20px;line-height:1.3;margin:0 0 12px}
+  .answers{display:flex;flex-direction:column;gap:8px}
+  .answer{
+    display:flex;align-items:center;gap:12px;
+    border:1.4px solid var(--line);border-radius:16px;
+    padding:13px 14px;font-size:14px;color:var(--ink-soft);
+  }
+  .answer .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--ink-faint);flex:none}
+  .answer.sel{
+    border-color:var(--gold);background:var(--gold-soft);color:var(--ink);font-weight:600;
+  }
+  .answer.sel .dot{border-color:var(--gold-deep);background:var(--gold)}
+
+  /* checkup */
+  .meter{display:flex;align-items:center;gap:12px;font-size:14px;padding:7px 0}
+  .meter .lbl{width:118px;flex:none}
+  .meter .track{flex:1;background:var(--line)}
+  .meter .val{width:38px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:13px}
+  .reflect{
+    background:var(--dark-panel);color:#CFC7B8;border-radius:20px;padding:18px;
+    font-size:14.5px;
+  }
+  .reflect .caption{color:#877E6D;display:block;margin-bottom:8px}
+  .reflect .q{
+    border-left:3px solid var(--gold);padding-left:12px;margin-top:10px;
+    color:var(--dark-panel-text);font-size:15.5px;
+  }
+
+  /* ---------- landing ---------- */
+  .landing{margin-bottom:34px;padding:38px 38px 34px}
+  .landing .small{font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold-deep);font-weight:600}
+  .landing h3{font-size:clamp(30px,4.5vw,46px);margin:10px 0 12px;line-height:1.08}
+  .landing .quote{max-width:46ch;font-size:17px;color:var(--ink-soft);margin:0 0 28px}
+  .landing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+  .land-card{border-radius:24px;padding:22px;min-height:150px;display:flex;flex-direction:column;justify-content:flex-end}
+  .land-card h4{margin:0 0 4px;font-size:22px;letter-spacing:.08em}
+  .land-card p{margin:0;font-size:13.5px;opacity:.8}
+  .land-dark{background:var(--dark-panel);color:var(--dark-panel-text)}
+  .land-stone{background:var(--stone);color:#161310}
+  .land-gold{background:linear-gradient(150deg,#CBA967,#A98940);color:#12100D}
+  .landing .today{
+    margin-top:16px;border:1px solid var(--line);border-radius:24px;
+    padding:20px 22px;background:var(--surface-2);
+  }
+  .landing .today h4{margin:0 0 2px;font-size:17px}
+  .landing .today p{margin:0 0 14px;font-size:14px;color:var(--ink-soft)}
+  .landing .today .track{height:10px;background:var(--line);border-radius:99px;overflow:hidden}
+  .landing .today .track i{display:block;height:100%;width:78%;background:var(--gold);border-radius:99px}
+
+  /* ---------- voice ---------- */
+  .voice{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:640px){.voice{grid-template-columns:1fr}}
+  .voice .card{padding:20px 22px}
+  .voice .tag{font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:700}
+  .voice .yes .tag{color:var(--gold-deep)}
+  .voice .no .tag{color:var(--ink-faint)}
+  .voice p{margin:8px 0 0;font-size:15px}
+  .voice .no p{color:var(--ink-faint);text-decoration:line-through;text-decoration-thickness:1px}
+
+  footer{
+    margin-top:90px;border-top:1px solid var(--line);
+    padding:34px 0 46px;color:var(--ink-faint);font-size:13px;
+  }
+  footer .wrap{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+</style>
+
+<nav>
+  <div class="wrap">
+    <span class="brand">
+      <svg viewBox="0 0 200 200" aria-hidden="true"><rect x="10" y="10" width="180" height="180" rx="52" fill="currentColor"/><circle cx="66" cy="134" r="13" fill="var(--paper)"/><circle cx="100" cy="100" r="13" fill="var(--paper)"/><circle cx="136" cy="64" r="14.5" fill="var(--gold)"/></svg>
+      <span class="wordmark">AMANA</span>
+    </span>
+    <span class="links">
+      <a href="#fondation">Fondation</a><a href="#logo">Logo</a><a href="#couleur">Couleur</a><a href="#typo">Typo</a><a href="#icones">Icônes</a><a href="#univers">Univers</a><a href="#ecrans">Écrans</a><a href="#voix">Voix</a>
+    </span>
+  </div>
+</nav>
+
+<header class="hero">
+  <svg class="hero-path" viewBox="0 0 1200 150" preserveAspectRatio="none" aria-hidden="true">
+    <path class="trail" d="M-20 130 C 240 120, 420 60, 640 78 C 860 96, 1020 30, 1220 44"
+      fill="none" stroke="#CBA967" stroke-width="2.5" stroke-dasharray="2 14" stroke-linecap="round" pathLength="900"/>
+    <circle cx="640" cy="78" r="5" fill="#F0EAE0"/>
+    <circle cx="1120" cy="47" r="9" fill="#CBA967"/>
+    <circle cx="1120" cy="47" r="16" fill="none" stroke="#CBA967" stroke-opacity=".35" stroke-width="2"/>
+  </svg>
+  <div class="wrap">
+    <svg class="mark" viewBox="0 0 200 200" aria-label="Symbole AMANA">
+      <rect x="10" y="10" width="180" height="180" rx="52" fill="#F0EAE0"/>
+      <circle cx="66" cy="134" r="13" fill="#12100D"/>
+      <circle cx="100" cy="100" r="13" fill="#12100D"/>
+      <circle cx="136" cy="64" r="14.5" fill="#C2A05C"/>
+    </svg>
+    <div>
+      <h1 class="wordmark serif" style="font-family:system-ui,sans-serif">AMANA</h1>
+      <p class="motto">Care · Grow · Align<br>Take care of what matters.<br>Build with purpose.<br><span class="g">God bless.</span></p>
+    </div>
+    <p class="lead serif">Design system V3. Prendre soin de ce qui a été confié : un langage visuel calme, chaleureux et précis — le chemin, la lumière, et rien de superflu.</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ============ 01 FONDATION ============ -->
+  <section id="fondation">
+    <p class="eyebrow">01 — Fondation</p>
+    <h2 class="serif">Un dépôt confié, pas un outil de plus</h2>
+    <p class="intro">Tout le système découle de trois décisions : la métaphore unique du <b>chemin</b> (progression, étapes, destination éclairée), une matière <b>ivoire et encre</b> réchauffée d'or (sérénité, valeur, lumière), et la règle « un outil n'a pas d'âme » — aucune mascotte, aucun visage, aucune anthropomorphisation. L'or est réservé à ce qui compte : la destination, l'alignement, l'essentiel du jour.</p>
+    <div class="usage">
+      <div class="card"><h4>Sérénité d'abord</h4><p>Espaces généreux, angles doux, une seule information forte par écran. Jamais d'« usine à statistiques ».</p></div>
+      <div class="card"><h4>L'or est rare</h4><p>Un seul accent or par surface : la priorité essentielle, l'indice d'alignement, la destination du chemin.</p></div>
+      <div class="card"><h4>Maturité</h4><p>Design adulte et sobre. La gamification s'exprime par la lumière et la progression, pas par des confettis.</p></div>
+    </div>
+  </section>
+
+  <!-- ============ 02 LOGO ============ -->
+  <section id="logo">
+    <p class="eyebrow">02 — Logo</p>
+    <h2 class="serif">Trois pas vers la lumière</h2>
+    <p class="intro">Le symbole : un carré adouci — le cadre de vie, l'amana reçue — traversé par trois points ascendants. Les deux premiers sont l'encre du quotidien ; le troisième, légèrement plus grand et doré, est la destination. La diagonale monte toujours de gauche à droite.</p>
+    <div class="logo-grid">
+      <div class="logo-tile t-ivory">
+        <svg viewBox="0 0 200 200" aria-label="Logo principal sur ivoire"><rect x="10" y="10" width="180" height="180" rx="52" fill="#161310"/><circle cx="66" cy="134" r="13" fill="#F5F1E8"/><circle cx="100" cy="100" r="13" fill="#F5F1E8"/><circle cx="136" cy="64" r="14.5" fill="#C2A05C"/></svg>
+        <span class="caption">Principal — sur ivoire</span>
+      </div>
+      <div class="logo-tile t-ink">
+        <svg viewBox="0 0 200 200" aria-label="Logo sur encre"><rect x="10" y="10" width="180" height="180" rx="52" fill="#F0EAE0"/><circle cx="66" cy="134" r="13" fill="#12100D"/><circle cx="100" cy="100" r="13" fill="#12100D"/><circle cx="136" cy="64" r="14.5" fill="#C2A05C"/></svg>
+        <span class="caption">Inversé — sur encre</span>
+      </div>
+      <div class="logo-tile t-gold">
+        <svg viewBox="0 0 200 200" aria-label="Monogramme or"><rect x="10" y="10" width="180" height="180" rx="52" fill="#12100D"/><circle cx="66" cy="134" r="13" fill="#CBA967"/><circle cx="100" cy="100" r="13" fill="#CBA967"/><circle cx="136" cy="64" r="14.5" fill="#F0EAE0"/></svg>
+        <span class="caption">Cérémonial — fonds or</span>
+      </div>
+    </div>
+    <div class="construction">
+      <div class="card">
+        <div class="fig">
+          <svg viewBox="0 0 200 200" aria-label="Grille de construction">
+            <rect x="10" y="10" width="180" height="180" rx="52" fill="none" stroke="var(--ink-faint)" stroke-width="2"/>
+            <line x1="40" y1="160" x2="160" y2="40" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="4 6"/>
+            <circle cx="66" cy="134" r="13" fill="none" stroke="var(--ink)" stroke-width="2"/>
+            <circle cx="100" cy="100" r="13" fill="none" stroke="var(--ink)" stroke-width="2"/>
+            <circle cx="136" cy="64" r="14.5" fill="none" stroke="var(--gold-deep)" stroke-width="2"/>
+          </svg>
+        </div>
+        <ul class="rule-list">
+          <li><b>Construction.</b> Rayon du cadre = 26 % du côté. Points sur la diagonale à 45°, espacés d'un pas constant.</li>
+          <li><b>Hiérarchie.</b> Le point-destination est 12 % plus grand que les deux autres. Toujours or (ou ivoire sur fond or).</li>
+          <li><b>Origine.</b> Dans le brand board initial, les trois points étaient ivoire ; la V3 dore le point-destination, héritage du système d'icônes (un point d'or = l'essentiel).</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="fig">
+          <svg viewBox="0 0 200 200" aria-label="Zone de protection">
+            <rect x="34" y="34" width="132" height="132" rx="38" fill="var(--ink)"/>
+            <circle cx="75" cy="125" r="9.5" fill="var(--paper)"/>
+            <circle cx="100" cy="100" r="9.5" fill="var(--paper)"/>
+            <circle cx="126" cy="74" r="10.6" fill="var(--gold)"/>
+            <rect x="10" y="10" width="180" height="180" fill="none" stroke="var(--ink-faint)" stroke-width="1.5" stroke-dasharray="5 6"/>
+          </svg>
+        </div>
+        <ul class="rule-list">
+          <li><b>Protection.</b> Marge minimale autour du symbole = diamètre d'un point de chemin.</li>
+          <li><b>Interdits.</b> Pas de rotation, pas d'ombre portée, pas d'yeux ni de visage, jamais plus de trois points.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 03 COULEUR ============ -->
+  <section id="couleur">
+    <p class="eyebrow">03 — Couleur</p>
+    <h2 class="serif">Ivoire, encre, et l'or qui compte</h2>
+    <p class="intro">La palette d'origine (noir <span style="font-family:ui-monospace,monospace">#0B0B0B</span>, or <span style="font-family:ui-monospace,monospace">#C6A15B</span>, stone <span style="font-family:ui-monospace,monospace">#D8C3A5</span>) est conservée mais réchauffée : l'encre tire vers le brun, l'ivoire remplace le blanc pur. Ratio d'usage : 60 % ivoire · 30 % encre · 8 % stone · 2 % or.</p>
+    <div class="swatch-row">
+      <div class="swatch" style="background:#F5F1E8;color:#161310;border-color:rgba(22,19,16,.18)"><span class="name">Ivoire</span><span class="hex">#F5F1E8</span></div>
+      <div class="swatch" style="background:#FFFFFF;color:#161310;border-color:rgba(22,19,16,.18)"><span class="name">Blanc</span><span class="hex">#FFFFFF</span></div>
+      <div class="swatch" style="background:#161310;color:#F0EAE0"><span class="name">Encre</span><span class="hex">#161310</span></div>
+      <div class="swatch" style="background:#C2A05C;color:#12100D"><span class="name">Or</span><span class="hex">#C2A05C</span></div>
+      <div class="swatch" style="background:#D8C3A5;color:#161310"><span class="name">Stone</span><span class="hex">#D8C3A5</span></div>
+      <div class="swatch" style="background:#5E5749;color:#F5F1E8"><span class="name">Encre douce</span><span class="hex">#5E5749</span></div>
+    </div>
+    <p class="caption">Gamme or — du voile au bronze</p>
+    <div class="scale">
+      <div style="background:#F6EEDC"></div><div style="background:#EADDBE"></div><div style="background:#DCC494"></div><div style="background:#C2A05C"></div><div style="background:#A98940"></div><div style="background:#96793E"></div><div style="background:#6E5527"></div>
+    </div>
+    <p class="caption">Gamme encre — du papier au noir chaud</p>
+    <div class="scale">
+      <div style="background:#EFE9DC"></div><div style="background:#CBC2B0"></div><div style="background:#8E8574"></div><div style="background:#5E5749"></div><div style="background:#3A342B"></div><div style="background:#161310"></div><div style="background:#0C0B09"></div>
+    </div>
+    <div class="usage">
+      <div class="card"><h4>Or</h4><p>Priorité essentielle, indice d'alignement, destination du chemin, CTA unique. Jamais deux accents or côte à côte.</p></div>
+      <div class="card"><h4>Encre</h4><p>Texte, symbole, cartes « moment de profondeur » (AMANA Intelligence, réflexion du soir).</p></div>
+      <div class="card"><h4>Stone</h4><p>Fonds secondaires, états neutres, monde « Build ». Jamais pour du texte.</p></div>
+    </div>
+  </section>
+
+  <!-- ============ 04 TYPO ============ -->
+  <section id="typo">
+    <p class="eyebrow">04 — Typographie</p>
+    <h2 class="serif">Deux voix : la lettre et la parole</h2>
+    <p class="intro">Le mot-symbole et l'interface parlent en linéale (system-ui — remplaçable par Inter ou General Sans en production). Les moments de sens — intentions, questions de réflexion, synthèses narratives — passent en romane ancienne (Iowan Old Style / Palatino), la voix calme d'AMANA.</p>
+    <div class="card pad type-specimen">
+      <div class="type-row">
+        <span class="meta">Mot-symbole · 800 · +38 %</span>
+        <span class="wordmark" style="font-size:34px;font-weight:800">AMANA</span>
+      </div>
+      <div class="type-row">
+        <span class="meta">Display serif · 40–76 px</span>
+        <span class="serif" style="font-size:38px;line-height:1.15">Tout est plus clair.</span>
+      </div>
+      <div class="type-row">
+        <span class="meta">Titre écran · 600 · 24 px</span>
+        <span style="font-size:24px;font-weight:650">Ce qui compte aujourd'hui</span>
+      </div>
+      <div class="type-row">
+        <span class="meta">Corps · 400 · 15–16 px</span>
+        <span style="font-size:15.5px;color:var(--ink-soft)">Dépose ce que tu as en tête. AMANA structure, tu valides, puis tu avances — une action à la fois.</span>
+      </div>
+      <div class="type-row">
+        <span class="meta">Étiquette · 600 · +14 %</span>
+        <span class="caption" style="color:var(--gold-deep)">Intention du jour</span>
+      </div>
+      <div class="type-row">
+        <span class="meta">Données · tabulaire</span>
+        <span style="font-variant-numeric:tabular-nums;font-size:16px;font-weight:650">72 % · 58 % · 91 %</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 05 ICONES ============ -->
+  <section id="icones">
+    <p class="eyebrow">05 — Iconographie</p>
+    <h2 class="serif">Un trait, un point d'or</h2>
+    <p class="intro">Grille 48 px, trait unique de 3 px, terminaisons rondes, angles adoucis. Chaque icône porte exactement un point d'or : là où se trouve l'essentiel. Le trait hérite de la couleur du texte — les icônes vivent dans les deux thèmes sans variante.</p>
+    <div class="icon-grid">
+      <div class="icon-cell">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-label="Chemin">
+          <path d="M8 39 C 16 36, 18 28, 24 24 C 30 20, 33 15, 38 10"/>
+          <circle cx="8" cy="39" r="3" fill="currentColor" stroke="none"/>
+          <circle cx="24" cy="24" r="3" fill="currentColor" stroke="none"/>
+          <circle cx="38" cy="10" r="4.5" fill="var(--gold)" stroke="none"/>
+        </svg>
+        <span class="nm">Chemin</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-label="Croissance">
+          <path d="M9 40 V14 Q9 9 14 9 H40"/>
+          <path d="M15 34 L24 25 L33 16"/>
+          <circle cx="24" cy="25" r="2.6" fill="currentColor" stroke="none"/>
+          <circle cx="33" cy="16" r="4.2" fill="var(--gold)" stroke="none"/>
+        </svg>
+        <span class="nm">Croissance</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-label="Équilibre">
+          <path d="M24 6 L39 15 V33 L24 42 L9 33 V15 Z"/>
+          <circle cx="24" cy="24" r="4.5" fill="var(--gold)" stroke="none"/>
+        </svg>
+        <span class="nm">Équilibre</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-label="Transformation">
+          <path d="M11 38 C 12 26, 20 14, 37 11"/>
+          <path d="M31 8 L37 11 L34 17"/>
+          <circle cx="11" cy="38" r="3" fill="currentColor" stroke="none"/>
+          <circle cx="37" cy="11" r="4.5" fill="var(--gold)" stroke="none"/>
+        </svg>
+        <span class="nm">Transformation</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-label="Intention">
+          <circle cx="24" cy="24" r="16"/>
+          <circle cx="24" cy="24" r="8.5"/>
+          <circle cx="24" cy="24" r="3.5" fill="var(--gold)" stroke="none"/>
+        </svg>
+        <span class="nm">Intention</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-label="Alignement">
+          <path d="M7 24 H41"/>
+          <circle cx="12" cy="24" r="3" fill="currentColor" stroke="none"/>
+          <circle cx="24" cy="24" r="4.5" fill="var(--gold)" stroke="none"/>
+          <circle cx="36" cy="24" r="3" fill="currentColor" stroke="none"/>
+        </svg>
+        <span class="nm">Alignement</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-label="Mémoire">
+          <path d="M10 33 C10 37 14 40 24 40 C34 40 38 37 38 33"/>
+          <path d="M10 24 C10 28 14 31 24 31 C34 31 38 28 38 24"/>
+          <ellipse cx="24" cy="14.5" rx="14" ry="6.5"/>
+          <circle cx="24" cy="14.5" r="3" fill="var(--gold)" stroke="none"/>
+        </svg>
+        <span class="nm">Mémoire</span>
+      </div>
+      <div class="icon-cell">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-label="Sérénité">
+          <path d="M8 20 C 14 15, 20 15, 24 20 C 28 25, 34 25, 40 20"/>
+          <path d="M8 31 C 14 26, 20 26, 24 31 C 28 36, 34 36, 40 31"/>
+          <circle cx="24" cy="9" r="3.8" fill="var(--gold)" stroke="none"/>
+        </svg>
+        <span class="nm">Sérénité</span>
+      </div>
+    </div>
+    <p class="spec-note">Export : SVG 48 × 48, <span style="font-family:ui-monospace,monospace">stroke-width</span> figé à 3, trait en <span style="font-family:ui-monospace,monospace">currentColor</span>, point d'or en variable <span style="font-family:ui-monospace,monospace">--gold</span>.</p>
+  </section>
+
+  <!-- ============ 06 UNIVERS ============ -->
+  <section id="univers">
+    <p class="eyebrow">06 — Univers</p>
+    <h2 class="serif">Trois paysages, un même chemin</h2>
+    <p class="intro">Les mondes habillent l'onboarding et les domaines de vie. Chaque scène suit la même grammaire : lumière dorée à l'horizon, profondeur en quatre plans, et le chemin en pointillés d'or qui monte de gauche à droite vers une destination éclairée. Les palettes sont dérivées de la gamme or pour rester de la même famille.</p>
+
+    <div class="world">
+      <svg class="art" viewBox="0 0 1600 700" role="img" aria-label="Illustration Desert Path">
+        <defs>
+          <linearGradient id="d-sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#F7E9CF"/><stop offset=".65" stop-color="#F0D9AE"/><stop offset="1" stop-color="#E8C88E"/>
+          </linearGradient>
+          <radialGradient id="d-halo" cx=".5" cy=".5" r=".5">
+            <stop offset="0" stop-color="#E9B963" stop-opacity=".85"/><stop offset="1" stop-color="#E9B963" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="d-far" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#DDBE8C"/><stop offset="1" stop-color="#D2AE74"/>
+          </linearGradient>
+          <linearGradient id="d-mid" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#C89A58"/><stop offset="1" stop-color="#B9884A"/>
+          </linearGradient>
+          <linearGradient id="d-near" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#A97940"/><stop offset="1" stop-color="#8E6132"/>
+          </linearGradient>
+        </defs>
+        <rect width="1600" height="700" fill="url(#d-sky)"/>
+        <circle cx="1210" cy="200" r="190" fill="url(#d-halo)"/>
+        <circle cx="1210" cy="200" r="62" fill="#E4AE55"/>
+        <path d="M0 350 L190 230 L340 340 L520 210 L700 345 L900 250 L1120 360 L1600 280 V420 H0 Z" fill="url(#d-far)" opacity=".8"/>
+        <path d="M0 470 C 260 380, 520 480, 820 430 C 1100 385, 1350 460, 1600 410 V700 H0 Z" fill="url(#d-mid)"/>
+        <path d="M0 580 C 300 500, 560 620, 900 560 C 1200 508, 1420 590, 1600 545 V700 H0 Z" fill="url(#d-near)"/>
+        <path d="M330 585 C 400 570, 470 578, 540 566" stroke="#C89A58" stroke-width="4" fill="none" stroke-linecap="round" opacity=".7"/>
+        <path d="M980 640 C 1060 622, 1140 630, 1220 614" stroke="#C89A58" stroke-width="4" fill="none" stroke-linecap="round" opacity=".7"/>
+        <path d="M770 175 Q 790 158 810 175 M 826 188 Q 843 172 860 188" stroke="#7A5A2E" stroke-width="4" fill="none" stroke-linecap="round" opacity=".65"/>
+        <path d="M120 650 C 340 610, 480 560, 640 520 C 830 472, 990 440, 1120 380 C 1230 330, 1300 285, 1360 235"
+          fill="none" stroke="#F2DCAC" stroke-width="6" stroke-dasharray="2 22" stroke-linecap="round"/>
+        <circle cx="120" cy="650" r="15" fill="#161310"/><circle cx="120" cy="650" r="6" fill="#E4AE55"/>
+        <circle cx="640" cy="520" r="12" fill="#F7EFDC" stroke="#161310" stroke-width="4"/>
+        <circle cx="1120" cy="380" r="12" fill="#F7EFDC" stroke="#161310" stroke-width="4"/>
+        <circle cx="1360" cy="235" r="34" fill="none" stroke="#E4AE55" stroke-width="3" opacity=".65"/>
+        <circle cx="1360" cy="235" r="22" fill="#DCA94F" stroke="#161310" stroke-width="4"/>
+        <circle cx="1360" cy="235" r="8" fill="#161310"/>
+      </svg>
+      <div class="legend">
+        <h3 class="serif">Desert Path</h3>
+        <p>La Source — conscience, vision, intention. L'aube, la patience, l'essentiel.</p>
+        <span class="caption">Onboarding · monde 01</span>
+      </div>
+    </div>
+
+    <div class="world">
+      <svg class="art" viewBox="0 0 1600 700" role="img" aria-label="Illustration Forest Path">
+        <defs>
+          <linearGradient id="f-sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#EEF0E0"/><stop offset="1" stop-color="#DCE5CE"/>
+          </linearGradient>
+          <radialGradient id="f-light" cx=".5" cy=".5" r=".5">
+            <stop offset="0" stop-color="#F2DFA4" stop-opacity=".9"/><stop offset="1" stop-color="#F2DFA4" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="f-ground" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#5E7A52"/><stop offset="1" stop-color="#46603E"/>
+          </linearGradient>
+        </defs>
+        <rect width="1600" height="700" fill="url(#f-sky)"/>
+        <circle cx="1180" cy="230" r="240" fill="url(#f-light)"/>
+        <g fill="#9DB18C" opacity=".75">
+          <path d="M100 420 L170 220 L240 420 Z"/><path d="M215 430 L285 250 L355 430 Z"/>
+          <path d="M1350 420 L1420 230 L1490 420 Z"/><path d="M1460 440 L1520 290 L1580 440 Z"/>
+          <path d="M480 430 L545 265 L610 430 Z"/>
+        </g>
+        <g fill="#54714B">
+          <path d="M40 470 L130 210 L220 470 Z"/><path d="M300 480 L390 190 L480 480 Z"/>
+          <path d="M1230 470 L1320 190 L1410 470 Z"/><path d="M1450 490 L1520 300 L1590 490 Z"/>
+        </g>
+        <g fill="#33512F">
+          <path d="M120 520 L230 200 L340 520 Z"/>
+          <rect x="222" y="505" width="18" height="52" rx="8" fill="#4C3A26"/>
+          <path d="M1330 530 L1440 220 L1550 530 Z"/>
+          <rect x="1432" y="515" width="18" height="52" rx="8" fill="#4C3A26"/>
+        </g>
+        <path d="M0 560 C 300 505, 600 585, 900 545 C 1180 508, 1400 560, 1600 528 V700 H0 Z" fill="url(#f-ground)"/>
+        <path d="M0 660 C 260 615, 430 680, 700 645 C 960 612, 1200 668, 1600 630 V700 H0 Z" fill="#3A5236"/>
+        <path d="M-20 640 C 240 590, 420 660, 690 620 C 950 582, 1180 645, 1620 600" stroke="#84ABA1" stroke-width="30" fill="none" opacity=".8" stroke-linecap="round"/>
+        <path d="M130 665 C 330 625, 520 585, 700 540 C 900 490, 1030 450, 1130 395 C 1230 340, 1300 300, 1370 250"
+          fill="none" stroke="#EFD9A0" stroke-width="6" stroke-dasharray="2 22" stroke-linecap="round"/>
+        <circle cx="130" cy="665" r="15" fill="#161310"/><circle cx="130" cy="665" r="6" fill="#DCA94F"/>
+        <circle cx="700" cy="540" r="12" fill="#F4F1E2" stroke="#161310" stroke-width="4"/>
+        <circle cx="1130" cy="395" r="12" fill="#F4F1E2" stroke="#161310" stroke-width="4"/>
+        <circle cx="1370" cy="250" r="34" fill="none" stroke="#E0B762" stroke-width="3" opacity=".7"/>
+        <circle cx="1370" cy="250" r="22" fill="#DCA94F" stroke="#161310" stroke-width="4"/>
+        <circle cx="1370" cy="250" r="8" fill="#161310"/>
+      </svg>
+      <div class="legend">
+        <h3 class="serif">Forest Path</h3>
+        <p>Build — projets, famille, entreprise. La croissance patiente, plan après plan.</p>
+        <span class="caption">Domaines · monde 02</span>
+      </div>
+    </div>
+
+    <div class="world">
+      <svg class="art" viewBox="0 0 1600 700" role="img" aria-label="Illustration Ocean Path">
+        <defs>
+          <linearGradient id="o-sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#E4EEF0"/><stop offset=".8" stop-color="#F2E7CC"/><stop offset="1" stop-color="#F5E3BE"/>
+          </linearGradient>
+          <linearGradient id="o-sea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#7FA6AE"/><stop offset="1" stop-color="#5B8894"/>
+          </linearGradient>
+          <linearGradient id="o-cliff" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#9C8767"/><stop offset="1" stop-color="#7E6A4E"/>
+          </linearGradient>
+          <radialGradient id="o-beam" cx=".5" cy=".5" r=".5">
+            <stop offset="0" stop-color="#F0CE82" stop-opacity=".95"/><stop offset="1" stop-color="#F0CE82" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="1600" height="700" fill="url(#o-sky)"/>
+        <circle cx="1050" cy="150" r="52" fill="#E4AE55"/>
+        <rect y="380" width="1600" height="320" fill="url(#o-sea)"/>
+        <g stroke="#DDECEA" stroke-width="6" fill="none" stroke-linecap="round" opacity=".8">
+          <path d="M60 470 Q 160 450 260 470 T 460 470"/>
+          <path d="M600 540 Q 700 520 800 540 T 1000 540"/>
+          <path d="M300 620 Q 420 598 540 620 T 780 620"/>
+          <path d="M1050 600 Q 1150 580 1250 600 T 1450 600"/>
+        </g>
+        <path d="M760 330 L870 330 L905 300 L913 330 L960 330 L920 385 L795 385 Z" fill="#2E2A24" opacity=".9"/>
+        <path d="M871 322 V240 L940 315 H878" fill="#F4EFE2"/>
+        <path d="M540 180 Q 562 162 584 180 M 600 195 Q 620 178 640 195" stroke="#2E2A24" stroke-width="4" fill="none" stroke-linecap="round" opacity=".7"/>
+        <path d="M0 700 V430 C 130 415, 260 400, 380 355 C 520 305, 700 290, 900 260 C 1080 234, 1250 220, 1380 190 L 1600 160 V700 Z" fill="url(#o-cliff)"/>
+        <path d="M0 700 V560 C 240 535, 480 545, 760 505 C 1040 468, 1300 430, 1600 380 V700 Z" fill="#6B5940"/>
+        <circle cx="1372" cy="94" r="120" fill="url(#o-beam)"/>
+        <path d="M1340 175 L1360 60 L1404 60 L1424 175 Z" fill="#F4EFE2" stroke="#161310" stroke-width="5"/>
+        <path d="M1349 132 L1415 132 L1410 106 L1354 106 Z" fill="#B8543F"/>
+        <rect x="1354" y="42" width="56" height="22" rx="8" fill="#161310"/>
+        <circle cx="1382" cy="53" r="9" fill="#E4AE55"/>
+        <path d="M1332 178 H1432" stroke="#161310" stroke-width="6" stroke-linecap="round"/>
+        <path d="M120 640 C 340 600, 540 590, 720 545 C 920 495, 1080 440, 1200 380 C 1290 335, 1340 270, 1368 205"
+          fill="none" stroke="#F2DCA4" stroke-width="6" stroke-dasharray="2 22" stroke-linecap="round"/>
+        <circle cx="120" cy="640" r="15" fill="#161310"/><circle cx="120" cy="640" r="6" fill="#E4AE55"/>
+        <circle cx="720" cy="545" r="12" fill="#F7EFDC" stroke="#161310" stroke-width="4"/>
+        <circle cx="1200" cy="380" r="12" fill="#F7EFDC" stroke="#161310" stroke-width="4"/>
+      </svg>
+      <div class="legend">
+        <h3 class="serif">Ocean Path</h3>
+        <p>Align — impact, transmission, élévation. Le phare : la destination est une lumière.</p>
+        <span class="caption">Bilans · monde 03</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 07 ECRANS ============ -->
+  <section id="ecrans">
+    <p class="eyebrow">07 — Écrans</p>
+    <h2 class="serif">Le système en situation</h2>
+    <p class="intro">La landing et quatre écrans clés remis au propre avec les tokens ci-dessus. Une seule carte encre par écran — le moment de profondeur — et un seul accent or.</p>
+
+    <div class="card landing">
+      <span class="small">Your path</span>
+      <h3 class="serif">Build what matters.</h3>
+      <p class="quote serif">Take care of what is entrusted to you. Grow with purpose. Align your actions.</p>
+      <div class="landing-grid">
+        <div class="land-card land-dark"><h4>CARE</h4><p>Family · Health · Relationships</p></div>
+        <div class="land-card land-stone"><h4>GROW</h4><p>Business · Skills · Projects</p></div>
+        <div class="land-card land-gold"><h4>ALIGN</h4><p>Vision · Values · Purpose</p></div>
+      </div>
+      <div class="today">
+        <h4 class="serif">Today's Alignment</h4>
+        <p>How close are your actions to what matters most?</p>
+        <div class="track"><i></i></div>
+      </div>
+    </div>
+    <p class="screen-label caption" style="text-align:center;margin-bottom:30px">Landing — la promesse et les trois mondes</p>
+
+    <div class="screens">
+
+      <!-- Onboarding -->
+      <div>
+        <div class="phone">
+          <div class="ob-sky">
+            <svg viewBox="0 0 390 190" aria-hidden="true">
+              <defs>
+                <linearGradient id="ob-sky-g" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#F7E9CF"/><stop offset="1" stop-color="#EFD3A0"/>
+                </linearGradient>
+              </defs>
+              <rect width="390" height="190" fill="url(#ob-sky-g)"/>
+              <circle cx="300" cy="66" r="34" fill="#E4AE55"/>
+              <path d="M0 150 L90 92 L165 148 L260 84 L340 150 L390 118 V190 H0 Z" fill="#C89A58"/>
+              <path d="M0 190 V168 C 120 150, 260 176, 390 154 V190 Z" fill="#A97940"/>
+              <path d="M40 178 C 120 165, 200 140, 270 112 C 320 92, 350 74, 372 52" fill="none" stroke="#F7EFDC" stroke-width="4" stroke-dasharray="1.5 14" stroke-linecap="round"/>
+              <circle cx="372" cy="52" r="9" fill="#DCA94F" stroke="#161310" stroke-width="3"/>
+              <text x="26" y="44" font-size="17" font-weight="800" letter-spacing="6" fill="#161310" font-family="system-ui,sans-serif">AMANA</text>
+            </svg>
+          </div>
+          <div class="ob-progress" aria-label="Étape 5 sur 11">
+            <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <div class="p-body question">
+            <div>
+              <span class="caption" style="color:var(--gold-deep)">Ton chemin — étape 5 · 11</span>
+              <p class="q-title serif">Face à un défi important, tu préfères…</p>
+            </div>
+            <div class="answers">
+              <div class="answer"><span class="dot"></span>Décider rapidement et avancer</div>
+              <div class="answer sel"><span class="dot"></span>Construire avec patience</div>
+              <div class="answer"><span class="dot"></span>Mobiliser les personnes autour de toi</div>
+              <div class="answer"><span class="dot"></span>Comprendre avant d'agir</div>
+            </div>
+            <span class="btn gold">Continuer</span>
+          </div>
+        </div>
+        <p class="screen-label caption">Onboarding — le questionnaire sur le chemin</p>
+      </div>
+
+      <!-- Onboarding résultat -->
+      <div>
+        <div class="phone">
+          <div class="p-head">
+            <span class="wordmark">AMANA</span>
+            <span class="avatar">S</span>
+          </div>
+          <div class="p-body">
+            <div class="reflect">
+              <span class="caption">Ton mode naturel est identifié</span>
+              <p class="q serif" style="margin:6px 0 10px;font-size:26px;border:none;padding:0">Bâtisseur</p>
+              Tu construis avec patience — AMANA va s'y adapter :
+              <ul style="margin:10px 0 0;padding-left:18px;line-height:1.9">
+                <li>le ton de l'accompagnement</li>
+                <li>les défis proposés</li>
+                <li>le rythme de progression</li>
+                <li>les conseils</li>
+              </ul>
+            </div>
+            <div class="intention">
+              <span class="caption" style="color:var(--gold-deep)">Ton premier tableau de bord est prêt</span>
+              <span class="serif">Un projet. Trois indicateurs. Un premier objectif.</span>
+            </div>
+            <span class="btn gold">Créer mon chemin</span>
+          </div>
+        </div>
+        <p class="screen-label caption">Onboarding — la synthèse narrative</p>
+      </div>
+
+      <!-- Dashboard -->
+      <div>
+        <div class="phone">
+          <div class="p-head">
+            <span class="wordmark">AMANA</span>
+            <span class="avatar">S</span>
+          </div>
+          <div class="p-body">
+            <div>
+              <h3 class="serif">Bonjour Selim</h3>
+              <p class="p-sub">Jeudi 24 juillet — ton chemin du jour.</p>
+            </div>
+            <div class="intention">
+              <span class="caption" style="color:var(--gold-deep)">Intention du jour</span>
+              <span class="serif">« Qu'est-ce qui, aujourd'hui, mérite vraiment ton énergie ? »</span>
+            </div>
+            <div class="prio">
+              <div class="prio-item main"><span class="ring"></span>Clarifier la stratégie d'acquisition<span class="due">14 h</span></div>
+              <div class="prio-item"><span class="ring"></span>Relire le brief MVP<span class="due">20 min</span></div>
+              <div class="prio-item"><span class="ring"></span>Appeler le cabinet comptable<span class="due">10 min</span></div>
+            </div>
+            <div class="proj">
+              <span class="caption">Projet actif · 1 / 3</span>
+              <h4>Développement AMANA</h4>
+              <div class="track"><i style="width:72%"></i></div>
+              <p class="next">Prochaine étape : <b>valider le périmètre MVP</b></p>
+            </div>
+            <div class="kpis">
+              <div class="kpi">
+                <svg viewBox="0 0 58 58" aria-label="Clarté 72 %">
+                  <circle cx="29" cy="29" r="24" fill="none" stroke="var(--line)" stroke-width="5"/>
+                  <circle cx="29" cy="29" r="24" fill="none" stroke="var(--ink)" stroke-width="5" stroke-linecap="round" stroke-dasharray="108.6 150.8" transform="rotate(-90 29 29)"/>
+                </svg>
+                <span class="val">72 %</span><span class="lbl">Clarté</span>
+              </div>
+              <div class="kpi">
+                <svg viewBox="0 0 58 58" aria-label="Action 58 %">
+                  <circle cx="29" cy="29" r="24" fill="none" stroke="var(--line)" stroke-width="5"/>
+                  <circle cx="29" cy="29" r="24" fill="none" stroke="var(--ink-soft)" stroke-width="5" stroke-linecap="round" stroke-dasharray="87.5 150.8" transform="rotate(-90 29 29)"/>
+                </svg>
+                <span class="val">58 %</span><span class="lbl">Action</span>
+              </div>
+              <div class="kpi">
+                <svg viewBox="0 0 58 58" aria-label="Alignement 91 %">
+                  <circle cx="29" cy="29" r="24" fill="none" stroke="var(--line)" stroke-width="5"/>
+                  <circle cx="29" cy="29" r="24" fill="none" stroke="var(--gold)" stroke-width="5" stroke-linecap="round" stroke-dasharray="137.2 150.8" transform="rotate(-90 29 29)"/>
+                </svg>
+                <span class="val">91 %</span><span class="lbl">Alignement</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="screen-label caption">Dashboard — ce qui compte aujourd'hui</p>
+      </div>
+
+      <!-- Check-up -->
+      <div>
+        <div class="phone">
+          <div class="p-head">
+            <span class="wordmark">AMANA</span>
+            <span class="avatar">S</span>
+          </div>
+          <div class="p-body">
+            <div>
+              <h3 class="serif">Check-up projet</h3>
+              <p class="p-sub">Développement AMANA — bilan mensuel.</p>
+            </div>
+            <div class="card" style="padding:16px 18px">
+              <span class="caption">Résultats</span>
+              <div class="meter"><span class="lbl">Objectif</span><span class="track"><i style="width:72%;background:var(--ink)"></i></span><span class="val">72</span></div>
+              <div class="meter"><span class="lbl">Avancement</span><span class="track"><i style="width:58%;background:var(--ink-soft)"></i></span><span class="val">58</span></div>
+              <div class="meter"><span class="lbl">Impact</span><span class="track"><i style="width:85%;background:var(--gold)"></i></span><span class="val">85</span></div>
+            </div>
+            <div class="card" style="padding:16px 18px">
+              <span class="caption">Progression personnelle</span>
+              <div class="meter"><span class="lbl">Discipline</span><span class="track"><i style="width:80%;background:var(--ink)"></i></span><span class="val">8</span></div>
+              <div class="meter"><span class="lbl">Leadership</span><span class="track"><i style="width:70%;background:var(--ink)"></i></span><span class="val">7</span></div>
+              <div class="meter"><span class="lbl">Communication</span><span class="track"><i style="width:60%;background:var(--ink-soft)"></i></span><span class="val">6</span></div>
+            </div>
+            <div class="card" style="padding:16px 18px;border-color:var(--gold)">
+              <span class="caption" style="color:var(--gold-deep)">Purpose &amp; alignement</span>
+              <div class="meter"><span class="lbl">Vision</span><span class="track"><i style="width:90%;background:var(--gold)"></i></span><span class="val">9</span></div>
+              <div class="meter"><span class="lbl">Valeurs</span><span class="track"><i style="width:100%;background:var(--gold)"></i></span><span class="val">10</span></div>
+              <div class="meter"><span class="lbl">Contribution</span><span class="track"><i style="width:80%;background:var(--gold)"></i></span><span class="val">8</span></div>
+              <div class="meter"><span class="lbl">Éthique</span><span class="track"><i style="width:100%;background:var(--gold)"></i></span><span class="val">10</span></div>
+            </div>
+            <div class="reflect">
+              <span class="caption">Amana Intelligence</span>
+              Ton projet avance bien. Ta communication reste en retrait des autres dimensions.
+              <p class="q serif">« Ton prochain obstacle est-il vraiment technique — ou tient-il à ta capacité à convaincre ? »</p>
+            </div>
+            <span class="btn">Explorer</span>
+          </div>
+        </div>
+        <p class="screen-label caption">Check-up — mesurer, puis réfléchir</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 08 VOIX ============ -->
+  <section id="voix">
+    <p class="eyebrow">08 — Voix &amp; langage</p>
+    <h2 class="serif">Accompagner, jamais s'incarner</h2>
+    <p class="intro">AMANA accompagne, aide, propose, facilite, structure. Le produit ne « pense » pas, n'« adore » pas, n'a ni âme ni visage. On propose, on ne prescrit pas ; on éclaire, on ne culpabilise pas.</p>
+    <div class="voice">
+      <div class="card yes"><span class="tag">On écrit</span><p>Ta prochaine étape</p></div>
+      <div class="card no"><span class="tag">On n'écrit pas</span><p>Optimisez votre workflow</p></div>
+      <div class="card yes"><span class="tag">On écrit</span><p>Ce qui compte aujourd'hui</p></div>
+      <div class="card no"><span class="tag">On n'écrit pas</span><p>Vos tâches en retard</p></div>
+      <div class="card yes"><span class="tag">On écrit</span><p>Voici une réflexion possible</p></div>
+      <div class="card no"><span class="tag">On n'écrit pas</span><p>Vous devez faire ceci</p></div>
+      <div class="card yes"><span class="tag">On écrit</span><p>Peux-tu réduire cette action à 10 minutes ?</p></div>
+      <div class="card no"><span class="tag">On n'écrit pas</span><p>Vous avez encore procrastiné</p></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <svg width="20" height="20" viewBox="0 0 200 200" aria-hidden="true"><rect x="10" y="10" width="180" height="180" rx="52" fill="currentColor"/><circle cx="66" cy="134" r="13" fill="var(--paper)"/><circle cx="100" cy="100" r="13" fill="var(--paper)"/><circle cx="136" cy="64" r="14.5" fill="var(--gold)"/></svg>
+    <span>AMANA — Design System V3 · consolidé depuis les maquettes du Drive « Amana webapp bi-idniLlah » · juillet 2026</span>
+  </div>
+</footer>

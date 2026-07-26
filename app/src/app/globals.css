@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+/* ============================================================
+   AMANA — Design tokens V3
+   Source : design/amana-design-system.html
+   Ratio d'usage : 60 % ivoire · 30 % encre · 8 % stone · 2 % or.
+   Un seul accent or par écran.
+   ============================================================ */
+
+:root {
+  --paper: #F5F1E8;
+  --surface: #FDFBF6;
+  --surface-2: #EFE9DC;
+  --ink: #161310;
+  --ink-soft: #5E5749;
+  --ink-faint: #8E8574;
+  --line: rgba(22, 19, 16, 0.14);
+  --gold: #C2A05C;
+  --gold-deep: #96793E;
+  --gold-soft: #EADDBE;
+  --stone: #D8C3A5;
+  --dark-panel: #12100D;
+  --dark-panel-text: #F0EAE0;
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-gold: var(--gold);
+  --color-gold-deep: var(--gold-deep);
+  --color-gold-soft: var(--gold-soft);
+  --color-stone: var(--stone);
+  --color-panel: var(--dark-panel);
+  --color-panel-text: var(--dark-panel-text);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+
+  --radius-card: 22px;
+  --radius-phone: 42px;
+  --radius-pill: 999px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #12100D;
+    --surface: #1B1814;
+    --surface-2: #242019;
+    --ink: #F0EAE0;
+    --ink-soft: #B5AB99;
+    --ink-faint: #877E6D;
+    --line: rgba(240, 234, 224, 0.14);
+    --gold: #CBA967;
+    --gold-deep: #E0C288;
+    --gold-soft: #3A3222;
+    --dark-panel: #0C0B09;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* Les moments de sens (intentions, questions de réflexion, synthèses)
+   parlent en serif — la voix calme d'AMANA. */
+.voice-amana {
+  font-family: var(--font-serif);
+}
+
+/* Zoom (dimension profondeur) : entrée douce de la fiche et du voile. */
+@keyframes sheet-up {
+  from { transform: translateY(48px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes veil-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.sheet-enter { animation: sheet-up 0.3s ease-out both; }
+.veil-enter { animation: veil-in 0.25s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .sheet-enter, .veil-enter { animation: none; }
+}
+
+/* Paysages : animations légères, respiration lente — jamais de spectacle. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes scene-breathe {
+    from { opacity: 0.75; transform: scale(1); }
+    to { opacity: 1; transform: scale(1.06); }
+  }
+  .anim-halo {
+    animation: scene-breathe 7s ease-in-out infinite alternate;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  @keyframes scene-drift {
+    from { transform: translateX(-10px); }
+    to { transform: translateX(14px); }
+  }
+  .anim-birds { animation: scene-drift 12s ease-in-out infinite alternate; }
+  @keyframes scene-waves-x {
+    from { transform: translateX(-8px); }
+    to { transform: translateX(8px); }
+  }
+  .anim-waves { animation: scene-waves-x 7s ease-in-out infinite alternate; }
+  @keyframes scene-mist-x {
+    from { transform: translateX(-18px); }
+    to { transform: translateX(14px); }
+  }
+  .anim-mist { animation: scene-mist-x 16s ease-in-out infinite alternate; }
+  @keyframes scene-flow { to { stroke-dashoffset: -21.5; } }
+  .anim-path { animation: scene-flow 3.2s linear infinite; }
+  @keyframes scene-flow-sm { to { stroke-dashoffset: -14.2; } }
+  .anim-path-sm { animation: scene-flow-sm 2.6s linear infinite; }
+  @keyframes scene-bob {
+    from { transform: translateY(0) rotate(0.5deg); }
+    to { transform: translateY(4px) rotate(-0.5deg); }
+  }
+  .anim-boat {
+    animation: scene-bob 5s ease-in-out infinite alternate;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  @keyframes scene-glow { from { opacity: 0.3; } to { opacity: 0.75; } }
+  .anim-beam { animation: scene-glow 4.5s ease-in-out infinite alternate; }
+  @keyframes scene-shimmer { from { opacity: 0.45; } to { opacity: 0.95; } }
+  .anim-shimmer { animation: scene-shimmer 3.8s ease-in-out infinite alternate; }
+  @keyframes scene-pulse { from { opacity: 0.55; } to { opacity: 1; } }
+  .anim-glowpulse { animation: scene-pulse 5s ease-in-out infinite alternate; }
+}
