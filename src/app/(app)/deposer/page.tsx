@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { validerDecharge } from "@/lib/store";
+import { commitDecharge } from "@/lib/actions";
 
 /** SCR-DUMP + SCR-DUMP-REVIEW — la fonction centrale : déposer, puis valider le classement.
  *  Sprint 1 : structuration de démonstration locale ; l'appel IA réel (tool use
@@ -35,6 +35,7 @@ export default function DeposerPage() {
   const router = useRouter();
   const [texte, setTexte] = useState("");
   const [items, setItems] = useState<Item[] | null>(null);
+  const [saving, startSaving] = useTransition();
 
   if (items) {
     return (
@@ -61,13 +62,16 @@ export default function DeposerPage() {
           ))}
         </div>
         <button
-          onClick={() => {
-            validerDecharge(items);
-            router.push("/aujourdhui");
-          }}
-          className="rounded-full bg-gold px-6 py-3.5 text-sm font-bold uppercase tracking-widest text-[#12100D]"
+          onClick={() =>
+            startSaving(async () => {
+              await commitDecharge(items.map((it) => ({ type: it.type, titre: it.titre })));
+              router.push("/aujourdhui");
+            })
+          }
+          disabled={saving}
+          className="rounded-full bg-gold px-6 py-3.5 text-sm font-bold uppercase tracking-widest text-[#12100D] disabled:opacity-50"
         >
-          Tout valider
+          {saving ? "Enregistrement…" : "Tout valider"}
         </button>
         <button onClick={() => setItems(null)} className="text-sm text-ink-faint">
           Revenir au texte

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { getOnboarding, getProjets, getTaches } from "@/lib/store";
+import { getCheminData, type CheminData } from "@/lib/actions";
 import { DesertScene, ForestScene, OceanScene, fir } from "@/components/Scenes";
 
 /** SCR-CHEMIN — la navigation en 3 dimensions du blueprint (§8) :
@@ -225,40 +225,38 @@ function VerticalPath({ u, onZoom }: { u: Univers; onZoom: (e: Etape) => void })
   );
 }
 
-/** Fusionne les données réelles (onboarding, projets, décharges) dans les univers. */
-function universVivants(): Univers[] {
-  const onb = getOnboarding();
-  const projets = getProjets();
-  const taches = getTaches();
+/** Fusionne les données réelles (profil, projets) dans les univers. */
+function universVivants(data: CheminData): Univers[] {
+  const projets = data.projects;
   const base = structuredClone(UNIVERS);
 
-  // La Source suit l'onboarding réel.
+  // La Source suit le profil réel.
   const src = base[0].etapes;
-  src[0].etat = onb.prenom ? "fait" : "actuel";
-  src[1].etat = onb.vision ? "fait" : onb.prenom ? "actuel" : "avenir";
-  if (onb.vision) src[1].detail = { label: "Fondation", vision: onb.vision };
-  src[2].etat = onb.vision ? "actuel" : "avenir";
+  src[0].etat = "fait";
+  src[1].etat = data.vision ? "fait" : "actuel";
+  if (data.vision) src[1].detail = { label: "Fondation", vision: data.vision };
+  src[2].etat = data.vision ? "actuel" : "avenir";
 
   // Build suit les projets réellement validés depuis la décharge.
   if (projets.length) {
-    const actifs = projets.filter((p) => p.statut === "actif");
-    const futurs = projets.filter((p) => p.statut === "futur");
+    const actifs = projets.filter((p) => p.status === "ACTIVE");
+    const futurs = projets.filter((p) => p.status === "IDEA");
     const etapes: Etape[] = [
       {
         titre: "Décharge validée",
-        etat: taches.length || projets.length ? "fait" : "avenir",
+        etat: data.taskCount || projets.length ? "fait" : "avenir",
         type: "depart",
-        detail: { label: "Fait", vision: `${taches.length + projets.length} éléments structurés et validés par toi.` },
+        detail: { label: "Fait", vision: `${data.taskCount + projets.length} éléments structurés et validés par toi.` },
       },
       ...actifs.slice(0, 3).map((p, i) => ({
-        titre: p.nom,
+        titre: p.name,
         etat: (i === 0 ? "actuel" : "avenir") as Etat,
         detail: {
-          label: `Projet actif${p.pct ? ` · ${p.pct} %` : ""}`,
-          vision: p.vision,
-          objectif: p.objectif,
-          action: p.action ?? "Définir la prochaine action",
-          date: p.date ?? "à dater",
+          label: `Projet actif${p.progress ? ` · ${p.progress} %` : ""}`,
+          vision: p.vision ?? undefined,
+          objectif: p.objective ?? undefined,
+          action: p.objective ?? "Définir la prochaine action",
+          date: "à dater",
         },
       })),
       {
@@ -267,7 +265,7 @@ function universVivants(): Univers[] {
         detail: {
           label: "Futurs",
           vision: futurs.length
-            ? futurs.map((p) => p.nom).join(" · ")
+            ? futurs.map((p) => p.name).join(" · ")
             : "Ce qui mûrit encore, sans pression.",
         },
       },
@@ -290,7 +288,9 @@ export default function CheminPage() {
   const colRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setMondes(universVivants());
+    getCheminData()
+      .then((d) => setMondes(universVivants(d)))
+      .catch(() => {});
   }, []);
 
   // En entrant dans un monde, le départ est en bas du chemin.
