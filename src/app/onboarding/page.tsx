@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { DesertScene, ForestScene, OceanScene, PathBanner } from "@/components/Scenes";
+import { saveOnboarding } from "@/lib/actions";
 
 /**
  * Onboarding narratif (SCR-ONB-1 → 13) — ≤ 10 min, jamais présenté comme un test.
- * Sprint 1 : réponses conservées en localStorage ; persistance Supabase au branchement.
+ * Les réponses sont enregistrées dans le profil (Neon) via `saveOnboarding`.
  */
 
 type Answers = {
@@ -77,6 +78,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [a, setA] = useState<Answers>(empty);
+  const [saving, startSaving] = useTransition();
 
   const totalSteps = 12; // hors portes finales
   const next = () => setStep((s) => s + 1);
@@ -90,10 +92,10 @@ export default function OnboardingPage() {
   }, [a]);
 
   function finish(porte: string) {
-    try {
-      localStorage.setItem("amana.onboarding", JSON.stringify({ ...a, porte, at: Date.now() }));
-    } catch {}
-    router.push(porte === "projet" ? "/conversation" : "/chemin");
+    startSaving(async () => {
+      await saveOnboarding({ ...a, porte });
+      router.push(porte === "projet" ? "/conversation" : "/chemin");
+    });
   }
 
   return (
