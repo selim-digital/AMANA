@@ -1,0 +1,247 @@
+// ════════════════════════════════════════════════════════════════════════════
+// AMANA — Schéma Prisma
+// BismiLlāh ar-Rahmān ar-Rahīm
+// Stack : Neon PostgreSQL + Prisma + NextAuth v5 (aligné sur FOOTUR).
+// ════════════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // Connexion poolée pour l'app (runtime).
+  url       = env("DATABASE_URL")
+  // Connexion directe pour les migrations (l'intégration Neon-Vercel fournit
+  // DATABASE_URL_UNPOOLED ; à défaut, on retombe sur DATABASE_URL).
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+// ─────────────────────────── Auth (NextAuth v5) ───────────────────────────
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String?   @unique
+  emailVerified  DateTime?
+  image          String?
+  role           Role      @default(USER)
+  hashedPassword String? // connexion email + mot de passe (optionnelle)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  lastLoginAt    DateTime?
+
+  accounts Account[]
+  sessions Session[]
+  profile  Profile?
+  values   Value[]
+  projects Project[]
+  tasks    Task[]
+  memories Memory[]
+  events   Event[]
+  insights Insight[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PasswordResetToken {
+  id      String   @id @default(cuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@index([email])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+// ─────────────────────────── Domaine AMANA ───────────────────────────
+
+model Profile {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  situation  String?
+  vision     String?
+  domaines   String[]
+  style      String?
+  motivation String?
+  disc       Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Value {
+  id         String   @id @default(cuid())
+  userId     String
+  label      String
+  isCardinal Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum ProjectStatus {
+  ACTIVE
+  SECONDARY
+  WAITING
+  IDEA
+  ARCHIVED
+}
+
+model Project {
+  id        String        @id @default(cuid())
+  userId    String
+  name      String
+  status    ProjectStatus @default(ACTIVE)
+  vision    String?
+  objective String?
+  domain    String?
+  progress  Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  deletedAt DateTime?
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goals Goal[]
+  tasks Task[]
+}
+
+enum GoalKind {
+  RESULT
+  PROGRESSION
+  ALIGNMENT
+}
+
+model Goal {
+  id        String   @id @default(cuid())
+  projectId String
+  kind      GoalKind
+  label     String
+  target    String?
+  progress  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  POSTPONED
+  BLOCKED
+}
+
+enum TaskKind {
+  TASK
+  REMINDER
+  DECISION
+}
+
+enum Priority {
+  ESSENTIAL
+  SECONDARY
+  NORMAL
+}
+
+model Task {
+  id        String     @id @default(cuid())
+  userId    String
+  projectId String?
+  title     String
+  kind      TaskKind   @default(TASK)
+  status    TaskStatus @default(TODO)
+  priority  Priority   @default(NORMAL)
+  dueAt     DateTime?
+  remindAt  DateTime?
+  learning  String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  deletedAt DateTime?
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+}
+
+enum MemoryLayer {
+  STABLE
+  EVOLUTIVE
+  LEARNING
+}
+
+model Memory {
+  id         String      @id @default(cuid())
+  userId     String
+  layer      MemoryLayer
+  content    String
+  source     String?
+  userEdited Boolean     @default(false)
+  active     Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  deletedAt  DateTime?
+
+  // Rappel sémantique : colonne embedding vector(1024) ajoutée au Sprint 2 (pgvector).
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Event {
+  id      String   @id @default(cuid())
+  userId  String
+  type    String
+  payload Json?
+  at      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Insight {
+  id        String    @id @default(cuid())
+  userId    String
+  content   String
+  evidence  String?
+  shownAt   DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
