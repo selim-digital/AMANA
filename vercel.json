@@ -1,4 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "prisma generate && (if [ -n \"$DATABASE_URL\" ]; then prisma migrate deploy; else echo 'Pas de DATABASE_URL — migrations ignorées (connecter Neon à Vercel)'; fi) && next build"
+  "buildCommand": "prisma generate && (if [ -n \"$DATABASE_URL\" ]; then prisma db push --accept-data-loss; else echo 'Pas de DATABASE_URL — schema non synchronise (connecter Neon a Vercel)'; fi) && next build"
 }
