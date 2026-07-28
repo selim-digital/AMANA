@@ -66,10 +66,41 @@
   }
 }
 
+html {
+  /* Défilement doux (ancres, retours en haut) sans gêner qui préfère l'immédiat. */
+  scroll-behavior: smooth;
+  /* Évite le saut de mise en page quand une page dépasse la hauteur d'écran. */
+  scrollbar-gutter: stable;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  /* Inertie naturelle sur iOS, et pas de rebond horizontal parasite. */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
+}
+
+/* Transition entre pages : léger fondu-montée, jamais un clignotement. */
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+main {
+  animation: page-in 280ms var(--ease-out) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  main { animation: veil-in 180ms ease both; }
+}
+
+/* Zones défilables internes : inertie et pas de propagation au document. */
+.scroll-soft {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 
 /* Les moments de sens (intentions, questions de réflexion, synthèses)
