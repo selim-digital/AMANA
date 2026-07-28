@@ -21,7 +21,9 @@
       "Bash(git commit *)",
       "Bash(git push *)",
       "Bash(git fetch *)",
-      "Bash(npx prisma *)"
+      "Bash(npx prisma *)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)"
     ]
   }
 }
