@@ -9,12 +9,10 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  // Connexion poolée pour l'app (runtime).
-  url       = env("DATABASE_URL")
-  // Connexion directe pour les migrations (l'intégration Neon-Vercel fournit
-  // DATABASE_URL_UNPOOLED ; à défaut, on retombe sur DATABASE_URL).
-  directUrl = env("DATABASE_URL_UNPOOLED")
+  provider = "postgresql"
+  // Une seule URL : la même en local et sur Vercel (injectée par l'intégration
+  // Neon). Le pooler accepte le `db push` utilisé au déploiement.
+  url      = env("DATABASE_URL")
 }
 
 // ─────────────────────────── Auth (NextAuth v5) ───────────────────────────

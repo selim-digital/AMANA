@@ -78,19 +78,83 @@ body {
   font-family: var(--font-serif);
 }
 
-/* Zoom (dimension profondeur) : entrée douce de la fiche et du voile. */
+/* ════════════════════════════════════════════════════════════════════════
+   Mouvement — courbes fortes, durées courtes, rien de spectaculaire.
+   Règle : on n'anime que transform et opacity (GPU).
+   ════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Réactivité tactile : tout ce qui se presse répond au doigt. */
+.press {
+  transition: transform 160ms var(--ease-out), opacity 160ms var(--ease-out);
+}
+.press:active {
+  transform: scale(0.97);
+}
+.press:disabled:active {
+  transform: none;
+}
+
+/* Survol réservé aux vraies souris (sinon faux positif au tap). */
+@media (hover: hover) and (pointer: fine) {
+  .lift {
+    transition: transform 200ms var(--ease-out), border-color 200ms ease;
+  }
+  .lift:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* Focus clavier visible et cohérent. */
+:where(a, button, input, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+/* Entrée en cascade : chaque bloc arrive juste après le précédent. */
+@keyframes enter-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.enter {
+  animation: enter-up 420ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+
+/* Transition d'étape (onboarding) : léger glissement, jamais de saut. */
+@keyframes step-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+.step-enter {
+  animation: step-in 340ms var(--ease-out) both;
+}
+
+/* Zoom (dimension profondeur) : la fiche monte, le voile se pose. */
 @keyframes sheet-up {
-  from { transform: translateY(48px); opacity: 0; }
+  from { transform: translateY(40px); opacity: 0; }
   to { transform: none; opacity: 1; }
 }
 @keyframes veil-in {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-.sheet-enter { animation: sheet-up 0.3s ease-out both; }
-.veil-enter { animation: veil-in 0.25s ease-out both; }
+.sheet-enter { animation: sheet-up 320ms var(--ease-drawer) both; }
+.veil-enter { animation: veil-in 220ms var(--ease-out) both; }
+
+/* Mouvement réduit : on garde les fondus, on retire les déplacements. */
 @media (prefers-reduced-motion: reduce) {
-  .sheet-enter, .veil-enter { animation: none; }
+  .enter, .step-enter, .sheet-enter {
+    animation: veil-in 200ms ease both;
+  }
+  .press:active { transform: none; }
+  .lift:hover { transform: none; }
 }
 
 /* Paysages : animations légères, respiration lente — jamais de spectacle. */

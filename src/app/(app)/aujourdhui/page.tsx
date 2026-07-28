@@ -30,19 +30,24 @@ export default async function DashboardPage() {
 
   return (
     <main className="flex flex-col gap-5 px-5 py-6">
-      <header className="flex items-center justify-between">
+      <header className="enter flex items-center justify-between lg:hidden" style={{ "--i": 0 } as React.CSSProperties}>
         <Wordmark className="text-sm" />
         <span className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/30 text-xs font-bold">
           {initiale}
         </span>
       </header>
 
-      <div>
-        <h1 className="voice-amana text-2xl">Bonjour {prenom}</h1>
+      <div className="enter" style={{ "--i": 1 } as React.CSSProperties}>
+        <h1 className="voice-amana text-2xl lg:text-3xl">Bonjour {prenom}</h1>
         <p className="text-sm text-ink-faint">Ton chemin du jour.</p>
       </div>
 
-      <section className="rounded-r-[16px] border-l-[3px] border-gold bg-surface-2 px-4 py-3.5">
+      <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
+        <div className="flex flex-col gap-5">
+      <section
+        className="enter rounded-r-[16px] border-l-[3px] border-gold bg-surface-2 px-4 py-3.5"
+        style={{ "--i": 2 } as React.CSSProperties}
+      >
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gold-deep">
           Intention du jour
         </span>
@@ -51,9 +56,13 @@ export default async function DashboardPage() {
         </p>
       </section>
 
-      <PriorityList items={priorities} />
+      <div className="enter" style={{ "--i": 3 } as React.CSSProperties}>
+        <PriorityList items={priorities} />
+      </div>
+        </div>
 
-      <a href="/chemin" aria-label="Ouvrir ton chemin" className="block">
+        <div className="flex flex-col gap-5">
+      <a href="/chemin" aria-label="Ouvrir ton chemin" className="enter press block" style={{ "--i": 4 } as React.CSSProperties}>
         <span className="flex items-baseline justify-between">
           <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             Ton chemin
@@ -64,7 +73,11 @@ export default async function DashboardPage() {
       </a>
 
       {projet ? (
-        <a href="/projets" className="block rounded-[20px] bg-panel p-5 text-panel-text">
+        <a
+          href="/projets"
+          className="enter press block rounded-[20px] bg-panel p-5 text-panel-text"
+          style={{ "--i": 5 } as React.CSSProperties}
+        >
           <span className="text-[11px] uppercase tracking-[0.14em] opacity-60">
             Projet actif · {activeCount} / 3
           </span>
@@ -80,7 +93,11 @@ export default async function DashboardPage() {
           </p>
         </a>
       ) : (
-        <a href="/deposer" className="block rounded-[20px] border border-ink/10 bg-surface p-5">
+        <a
+          href="/deposer"
+          className="enter press block rounded-[20px] border border-ink/10 bg-surface p-5"
+          style={{ "--i": 5 } as React.CSSProperties}
+        >
           <p className="voice-amana text-[15px]">Pas encore de projet actif.</p>
           <p className="mt-1 text-sm text-ink-soft">
             Vide ta tête : AMANA t&apos;aidera à en faire des projets clairs.
@@ -88,7 +105,7 @@ export default async function DashboardPage() {
         </a>
       )}
 
-      <section className="grid grid-cols-3 gap-2.5">
+      <section className="enter grid grid-cols-3 gap-2.5" style={{ "--i": 6 } as React.CSSProperties}>
         {rings.map((k) => (
           <div key={k.label} className="flex flex-col items-center gap-1.5 rounded-[16px] bg-surface-2 px-2 py-3.5">
             <svg viewBox="0 0 58 58" className="h-14 w-14" aria-label={`${k.label} ${k.value} %`}>
@@ -108,11 +125,13 @@ export default async function DashboardPage() {
       </section>
 
       {soir && (
-        <section className="rounded-[20px] border border-ink/10 bg-surface p-5">
+        <section className="enter rounded-[20px] border border-ink/10 bg-surface p-5" style={{ "--i": 7 } as React.CSSProperties}>
           <p className="voice-amana text-[15px]">La journée se termine — deux minutes pour la clore ?</p>
           <p className="mt-1 text-xs text-ink-faint">Accompli, appris, à ajuster, lâcher-prise.</p>
         </section>
       )}
+        </div>
+      </div>
     </main>
   );
 }
