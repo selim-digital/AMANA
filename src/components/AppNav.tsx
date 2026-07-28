@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { AmanaMark, Wordmark } from "@/components/AmanaMark";
 
 type Item = { href: string; label: string; short: string; icon: React.ReactNode };
@@ -74,6 +75,8 @@ function ConversationIcon() {
 
 export function AppNav() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "ADMIN";
   const isActive = (href: string) => pathname.startsWith(href);
 
   return (
@@ -110,13 +113,28 @@ export function AppNav() {
           Déposer
         </Link>
 
-        <Link
-          href="/conversation"
-          className="press mt-auto flex items-center gap-3 rounded-[14px] border border-ink/15 px-3 py-2.5 text-sm text-ink-soft"
-        >
-          <ConversationIcon />
-          En parler
-        </Link>
+        <div className="mt-auto flex flex-col gap-2">
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className={`press flex items-center gap-3 rounded-[14px] px-3 py-2.5 text-sm ${
+                isActive("/admin") ? "bg-gold-soft font-semibold text-ink" : "text-ink-soft hover:bg-surface-2"
+              }`}
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" {...stroke}>
+                <path d="M4 19V5m5 14V9m5 10v-6m5 6V7" />
+              </svg>
+              Administration
+            </Link>
+          )}
+          <Link
+            href="/conversation"
+            className="press flex items-center gap-3 rounded-[14px] border border-ink/15 px-3 py-2.5 text-sm text-ink-soft"
+          >
+            <ConversationIcon />
+            En parler
+          </Link>
+        </div>
       </aside>
 
       {/* ───────────── Mobile : conversation flottante + nav basse ───────────── */}
