@@ -103,12 +103,66 @@ export default function OnboardingPage() {
       {/* La progression est la position sur le chemin — pas de pourcentage. */}
       <PathBanner progress={Math.min(step, totalSteps) / totalSteps} />
 
-      <div className="flex flex-1 flex-col justify-center gap-6 px-6 py-8">
+      {/* key={step} : chaque étape entre en fondu-glissé, jamais de saut sec. */}
+      <div key={step} className="step-enter flex flex-1 flex-col justify-center gap-6 px-6 py-8">
         {step === 0 && (
-          <Etape titre="Bienvenue sur ton chemin.">
-            <p className="voice-amana text-lg text-ink-soft">
-              Décharger ce qui encombre. Clarifier ce qui compte. Avancer, une action à la fois.
+          <Etape titre="Voici ce qui va se passer.">
+            <p className="text-[15px] text-ink-soft">
+              Quelques questions courtes pour comprendre ce que tu portes. Trois minutes, pas plus —
+              et tu pourras tout ajuster ensuite.
             </p>
+
+            <ol className="flex flex-col gap-3">
+              {[
+                {
+                  t: "Déposer",
+                  d: "Tu vides ta tête. Tout ce qui t'occupe a sa place ici.",
+                  icon: (
+                    <path d="M12 4v10m0 0-4-4m4 4 4-4M5 18h14" />
+                  ),
+                },
+                {
+                  t: "Clarifier",
+                  d: "AMANA structure : projets, actions, décisions, rappels.",
+                  icon: <path d="M4 7h16M4 12h11M4 17h7" />,
+                },
+                {
+                  t: "Avancer",
+                  d: "Une seule chose essentielle par jour. Puis la suivante.",
+                  icon: (
+                    <>
+                      <path d="M4 19.5c3.5-1.2 4.5-4.5 7-6.5s4-4.5 6-7" />
+                      <circle cx="4" cy="19.5" r="1.5" fill="currentColor" stroke="none" />
+                      <circle cx="11" cy="13" r="1.5" fill="currentColor" stroke="none" />
+                      <circle cx="17.5" cy="5.5" r="2.2" fill="currentColor" stroke="none" />
+                    </>
+                  ),
+                },
+              ].map((s, i) => (
+                <li
+                  key={s.t}
+                  className="enter flex items-start gap-3 rounded-[18px] bg-surface p-4"
+                  style={{ "--i": i + 1 } as React.CSSProperties}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="mt-0.5 h-5 w-5 flex-none text-gold-deep"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    {s.icon}
+                  </svg>
+                  <span>
+                    <b className="block text-[15px]">{s.t}</b>
+                    <span className="text-sm text-ink-soft">{s.d}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+
             <Continuer onClick={next} label="Commencer" />
           </Etape>
         )}
@@ -116,8 +170,8 @@ export default function OnboardingPage() {
         {step === 1 && (
           <Etape titre="Amana : le dépôt confié.">
             <p className="voice-amana text-lg text-ink-soft">
-              Ton temps, ta santé, tes relations, tes projets — autant de choses qui t'ont été
-              confiées. AMANA t'aide à en prendre soin.
+              Ton temps, ta santé, tes relations, tes projets — autant de choses qui t&apos;ont été
+              confiées. AMANA t&apos;aide à en prendre soin, sans jamais décider à ta place.
             </p>
             <Continuer onClick={next} />
           </Etape>
@@ -318,11 +372,12 @@ function Choix({
   return (
     <Etape titre={titre}>
       <div className="flex flex-col gap-2">
-        {options.map((o) => (
+        {options.map((o, i) => (
           <button
             key={o}
             onClick={() => onSelect(o)}
-            className={`rounded-[18px] border px-5 py-3.5 text-left text-sm ${
+            style={{ "--i": i } as React.CSSProperties}
+            className={`press enter rounded-[18px] border px-5 py-3.5 text-left text-sm ${
               value === o
                 ? "border-gold bg-gold-soft font-semibold text-ink"
                 : "border-ink/15 bg-surface text-ink-soft"
@@ -350,7 +405,7 @@ function Continuer({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="rounded-full bg-gold px-6 py-3.5 text-sm font-bold uppercase tracking-widest text-[#12100D] disabled:opacity-40"
+      className="press rounded-full bg-gold px-6 py-3.5 text-sm font-bold uppercase tracking-widest text-[#12100D] disabled:opacity-40"
     >
       {label}
     </button>
@@ -381,7 +436,7 @@ function Porte({
   return (
     <button
       onClick={onClick}
-      className={`overflow-hidden rounded-[22px] text-left ${
+      className={`press lift overflow-hidden rounded-[22px] text-left ${
         gold ? "bg-gold text-[#12100D]" : "border border-ink/15 bg-surface"
       }`}
     >

@@ -63,7 +63,7 @@ export default function LoginPage() {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-12">
         <AmanaMark className="h-14 w-14" />
-        <div className="flex max-w-sm flex-col gap-3 rounded-[22px] bg-surface p-6 text-center">
+        <div className="step-enter flex max-w-sm flex-col gap-3 rounded-[22px] bg-surface p-6 text-center">
           <h1 className="voice-amana text-xl">Ton lien de connexion arrive.</h1>
           <p className="text-sm text-ink-soft">
             Ouvre l&apos;email envoyé à <b>{email}</b> et clique sur le lien pour entrer. Tu peux
@@ -82,17 +82,17 @@ export default function LoginPage() {
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-7 px-6 py-12">
-      <div className="flex flex-col items-center gap-3 text-center">
+      <div className="enter flex flex-col items-center gap-3 text-center">
         <AmanaMark className="h-14 w-14" />
         <Wordmark />
         <p className="voice-amana max-w-xs text-lg text-ink-soft">Décharger. Clarifier. Avancer.</p>
       </div>
 
-      <div className="flex w-full max-w-sm flex-col gap-3">
+      <div className="enter flex w-full max-w-sm flex-col gap-3" style={{ "--i": 1 } as React.CSSProperties}>
         <button
           type="button"
           onClick={() => signIn("google", { callbackUrl: CALLBACK })}
-          className="rounded-full border border-ink/20 bg-surface px-6 py-3 text-sm font-semibold"
+          className="press rounded-full border border-ink/20 bg-surface px-6 py-3 text-sm font-semibold"
         >
           Continuer avec Google
         </button>
@@ -111,7 +111,7 @@ export default function LoginPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ton prénom"
-              className="rounded-full border border-ink/20 bg-surface px-5 py-3 text-sm outline-none focus:border-gold"
+              className="rounded-full border border-ink/20 bg-surface px-5 py-3 text-sm outline-none transition-colors focus:border-gold"
             />
           )}
           <input
@@ -120,7 +120,7 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="ton@email.com"
-            className="rounded-full border border-ink/20 bg-surface px-5 py-3 text-sm outline-none focus:border-gold"
+            className="rounded-full border border-ink/20 bg-surface px-5 py-3 text-sm outline-none transition-colors focus:border-gold"
           />
 
           {(mode === "signup" || method === "password") && (
@@ -130,16 +130,16 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={mode === "signup" ? "Choisis un mot de passe (8+)" : "Mot de passe"}
-              className="rounded-full border border-ink/20 bg-surface px-5 py-3 text-sm outline-none focus:border-gold"
+              className="rounded-full border border-ink/20 bg-surface px-5 py-3 text-sm outline-none transition-colors focus:border-gold"
             />
           )}
 
-          {error && <p className="px-2 text-sm text-[#B8543F]">{error}</p>}
+          {error && <p className="step-enter px-2 text-sm text-[#B8543F]">{error}</p>}
 
           <button
             type="submit"
             disabled={busy}
-            className="rounded-full bg-gold px-6 py-3 text-sm font-bold uppercase tracking-widest text-[#12100D] disabled:opacity-50"
+            className="press rounded-full bg-gold px-6 py-3 text-sm font-bold uppercase tracking-widest text-[#12100D] disabled:opacity-50"
           >
             {busy
               ? "…"
@@ -160,7 +160,7 @@ export default function LoginPage() {
               }}
               className="underline-offset-4 hover:underline"
             >
-              {method === "magic" ? "Utiliser un mot de passe" : "Recevoir un lien magique"}
+              {method === "magic" ? "Utiliser un mot de passe" : "Recevoir un lien de connexion"}
             </button>
             {method === "password" && (
               <Link href="/forgot-password" className="underline-offset-4 hover:underline">

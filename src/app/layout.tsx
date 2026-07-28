@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   description:
     "Partenaire de progression adaptative : dépose ce qui encombre ton esprit, clarifie ce qui compte, avance une action à la fois.",
   applicationName: "AMANA",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "AMANA", statusBarStyle: "default" },
+  icons: { apple: "/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {
@@ -14,6 +17,7 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: light)", color: "#F5F1E8" },
     { media: "(prefers-color-scheme: dark)", color: "#12100D" },
   ],
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
