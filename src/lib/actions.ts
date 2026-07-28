@@ -77,33 +77,86 @@ export async function saveOnboarding(input: OnboardingInput) {
 
 // ─────────────────────────── Décharge mentale ───────────────────────────
 
-type DechargeItem = { type: string; titre: string };
+export type ProjetPropose = {
+  nom: string;
+  vision?: string;
+  objectif?: string;
+  domaine?: string;
+  prochaineAction?: string;
+  echeance?: string;
+};
 
-export async function commitDecharge(items: DechargeItem[]) {
+export type TachePropose = {
+  titre: string;
+  kind: "tache" | "rappel" | "decision";
+  projet?: string;
+  echeance?: string;
+};
+
+const KIND = { tache: "TASK", rappel: "REMINDER", decision: "DECISION" } as const;
+
+export async function commitDecharge(projets: ProjetPropose[], taches: TachePropose[]) {
   const userId = await requireUserId();
 
-  const activeCount = await prisma.project.count({
-    where: { userId, deletedAt: null, status: "ACTIVE" },
+  const existants = await prisma.project.findMany({
+    where: { userId, deletedAt: null },
+    select: { id: true, name: true, status: true },
   });
-  let created = activeCount;
+  let actifs = existants.filter((p) => p.status === "ACTIVE").length;
 
-  for (const it of items) {
-    if (it.type === "Projet") {
-      // Règle produit : max 3 projets actifs, au-delà → boîte à idées (futurs).
-      const statut = created < 3 ? "ACTIVE" : "IDEA";
-      if (statut === "ACTIVE") created += 1;
-      await prisma.project.create({ data: { userId, name: it.titre, status: statut } });
-      await logEvent(userId, "project_created", { statut });
-    } else {
-      const kind = it.type === "Rappel" ? "REMINDER" : it.type === "Décision" ? "DECISION" : "TASK";
-      await prisma.task.create({ data: { userId, title: it.titre, kind } });
-      await logEvent(userId, "task_created", { kind });
+  // Nom de projet → identifiant, pour rattacher les tâches.
+  const parNom = new Map(existants.map((p) => [p.name.toLowerCase(), p.id]));
+
+  for (const p of projets) {
+    if (parNom.has(p.nom.toLowerCase())) continue; // déjà présent : on ne duplique pas
+
+    // Règle produit : au-delà de 3 projets actifs, le suivant part en boîte à idées.
+    const status = actifs < 3 ? "ACTIVE" : "IDEA";
+    if (status === "ACTIVE") actifs += 1;
+
+    const cree = await prisma.project.create({
+      data: {
+        userId,
+        name: p.nom,
+        status,
+        vision: p.vision || null,
+        objective: p.objectif || null,
+        domain: p.domaine || null,
+      },
+    });
+    parNom.set(p.nom.toLowerCase(), cree.id);
+    await logEvent(userId, "project_created", { status, domaine: p.domaine });
+
+    // La prochaine action devient une vraie tâche rattachée au projet.
+    if (p.prochaineAction) {
+      await prisma.task.create({
+        data: {
+          userId,
+          projectId: cree.id,
+          title: p.prochaineAction,
+          kind: "TASK",
+          priority: "ESSENTIAL",
+        },
+      });
+      await logEvent(userId, "task_created", { kind: "TASK", source: "prochaine_action" });
     }
   }
 
-  await logEvent(userId, "braindump_completed", { count: items.length });
+  for (const t of taches) {
+    const projectId = t.projet ? (parNom.get(t.projet.toLowerCase()) ?? null) : null;
+    await prisma.task.create({
+      data: { userId, projectId, title: t.titre, kind: KIND[t.kind] ?? "TASK" },
+    });
+    await logEvent(userId, "task_created", { kind: KIND[t.kind] ?? "TASK" });
+  }
+
+  await logEvent(userId, "braindump_completed", {
+    projets: projets.length,
+    taches: taches.length,
+  });
   revalidatePath("/aujourdhui");
   revalidatePath("/projets");
+  revalidatePath("/chemin");
 }
 
 // ─────────────────────────── Tâches ───────────────────────────

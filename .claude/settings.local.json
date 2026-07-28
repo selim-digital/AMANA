@@ -23,7 +23,8 @@
       "Bash(git fetch *)",
       "Bash(npx prisma *)",
       "Bash(git checkout *)",
-      "Bash(git merge *)"
+      "Bash(git merge *)",
+      "Bash(git commit -q -m 'Decharge pilotee par Claude, chemin reconstruit, espace admin distinct, fluidite' -m '1/ Detection des projets : /api/decharge \\(generateObject + claude-sonnet-5\\) remplace la detection par mots-cles. Sortie structuree distinguant projets \\(vision, objectif, domaine, prochaine action\\) et taches/rappels/decisions, avec extrait source anti-hallucination. Ecran de validation ou chaque projet est depliable et editable. commitDecharge persiste les champs riches, applique la regle des 3 actifs et cree la prochaine action rattachee. *)"
     ]
   }
 }
