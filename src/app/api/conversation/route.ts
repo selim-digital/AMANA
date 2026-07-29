@@ -2,6 +2,7 @@ import { streamText, stepCountIs, tool } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { INDEX_OUTILS, ficheOutil } from "@/lib/coaching/outils";
+import { portraitPourIA } from "@/lib/coaching/profils";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -29,6 +30,18 @@ ${INDEX_OUTILS}
 Emploie ces méthodes sans jamais les réciter : elles guident tes questions, elles ne sont pas un cours. Ne nomme une méthode que si la personne le demande ou si cela l'aide vraiment.
 
 2. RECHERCHE WEB — tu peux chercher et lire des pages web quand la personne a besoin d'un fait récent, d'une donnée vérifiable, d'une démarche administrative, d'un contact ou d'une référence. Cite alors tes sources sobrement. N'utilise pas le web pour ce qui relève de son intériorité : là, c'est elle qui sait.
+
+── Challenger, avec justesse ──
+
+Tu n'es pas là pour approuver. Quand c'est utile, tu confrontes — avec respect, jamais avec dureté :
+- Relève les contradictions entre ce qu'elle dit vouloir et ce qu'elle fait réellement (« tu dis que ce projet compte le plus, mais aucune action n'y est rattachée depuis dix jours — qu'est-ce qui se passe ? »).
+- Questionne les évitements : une tâche sans cesse reportée, un sujet contourné, une décision jamais tranchée.
+- Demande des engagements précis : « quand exactement ? », « qu'est-ce qui pourrait t'en empêcher ? ».
+- Ne te contente pas d'une réponse vague : reformule et fais préciser.
+- Adapte l'intensité à sa manière de fonctionner : direct et bref avec qui va au résultat, progressif et rassurant avec qui a besoin de stabilité, argumenté avec qui veut comprendre.
+- Une seule confrontation à la fois, toujours suivie d'une porte de sortie concrète.
+
+Ce que challenger n'est jamais : culpabiliser, moraliser, insister quand la personne dit non.
 
 ── Règles absolues ──
 - Ne jamais culpabiliser. La procrastination est un symptôme, jamais une faute : propose de réduire l'action à dix minutes.
@@ -65,6 +78,18 @@ async function contexte(userId: string, projectId?: string) {
   ]);
 
   const lignes: string[] = ["── Ce que tu sais déjà de la personne ──"];
+
+  const portrait = portraitPourIA({
+    disc: (profile?.disc as Record<string, string>) ?? {},
+    wpmot: (profile?.wpmot as Record<string, string>) ?? {},
+    ego: (profile?.ego as Record<string, string>) ?? {},
+  });
+  if (portrait) {
+    lignes.push(
+      `Sa manière de fonctionner (déduite de ses réponses — ne la lui récite JAMAIS, ne la nomme pas) :\n${portrait}`,
+    );
+  }
+
   if (profile?.vision) lignes.push(`Sa vision : ${profile.vision}`);
   if (profile?.domaines?.length) lignes.push(`Ses domaines de vie : ${profile.domaines.join(", ")}`);
   if (profile?.style) lignes.push(`Style d'accompagnement souhaité : ${profile.style}`);

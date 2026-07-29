@@ -131,6 +131,8 @@ model Profile {
   style      String?
   motivation String?
   disc       Json?
+  wpmot      Json?
+  ego        Json?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

@@ -174,6 +174,26 @@ export async function toggleTask(taskId: string) {
   revalidatePath("/aujourdhui");
 }
 
+// ─────────────────────────── Lecture de la personne ───────────────────────────
+
+/** Enregistre une réponse de profil (DISC, WPMOT ou ÉGO), au fil de l'eau. */
+export async function repondreProfil(cle: "disc" | "wpmot" | "ego", questionId: string, axe: string) {
+  const userId = await requireUserId();
+  const profil = await prisma.profile.findUnique({ where: { userId } });
+  if (!profil) return;
+
+  const actuel = (profil[cle] as Record<string, unknown> | null) ?? {};
+  const maj = { ...actuel, [questionId]: axe };
+
+  await prisma.profile.update({
+    where: { userId },
+    data: { [cle]: maj as Prisma.InputJsonValue },
+  });
+  await logEvent(userId, "profil_reponse", { instrument: cle, question: questionId });
+  revalidatePath("/aujourdhui");
+  revalidatePath("/profil");
+}
+
 // ─────────────────────────── Projets ───────────────────────────
 
 export type ProjetMaj = {
