@@ -174,6 +174,71 @@ export async function toggleTask(taskId: string) {
   revalidatePath("/aujourdhui");
 }
 
+// ─────────────────────────── Projets ───────────────────────────
+
+export type ProjetMaj = {
+  id: string;
+  name?: string;
+  vision?: string | null;
+  objective?: string | null;
+  domain?: string | null;
+  status?: "ACTIVE" | "SECONDARY" | "WAITING" | "IDEA" | "ARCHIVED";
+};
+
+export async function updateProject(p: ProjetMaj) {
+  const userId = await requireUserId();
+  const projet = await prisma.project.findFirst({ where: { id: p.id, userId } });
+  if (!projet) return;
+
+  // Règle produit : pas plus de 3 projets actifs.
+  if (p.status === "ACTIVE" && projet.status !== "ACTIVE") {
+    const actifs = await prisma.project.count({
+      where: { userId, deletedAt: null, status: "ACTIVE" },
+    });
+    if (actifs >= 3) {
+      return { error: "Trois projets actifs au maximum. Déclasse-en un d'abord." };
+    }
+  }
+
+  await prisma.project.update({
+    where: { id: p.id },
+    data: {
+      name: p.name?.trim() || projet.name,
+      vision: p.vision !== undefined ? p.vision || null : undefined,
+      objective: p.objective !== undefined ? p.objective || null : undefined,
+      domain: p.domain !== undefined ? p.domain || null : undefined,
+      status: p.status ?? undefined,
+    },
+  });
+  await logEvent(userId, "project_updated", { status: p.status });
+  revalidatePath("/projets");
+  revalidatePath("/aujourdhui");
+  revalidatePath("/chemin");
+}
+
+export async function deleteProject(id: string) {
+  const userId = await requireUserId();
+  const projet = await prisma.project.findFirst({ where: { id, userId } });
+  if (!projet) return;
+  await prisma.project.update({ where: { id }, data: { deletedAt: new Date() } });
+  await logEvent(userId, "project_deleted", {});
+  revalidatePath("/projets");
+  revalidatePath("/aujourdhui");
+  revalidatePath("/chemin");
+}
+
+/** Enregistre le nouvel ordre après un glisser-déposer. */
+export async function reorderProjects(ids: string[]) {
+  const userId = await requireUserId();
+  await prisma.$transaction(
+    ids.map((id, i) =>
+      prisma.project.updateMany({ where: { id, userId }, data: { order: i } }),
+    ),
+  );
+  revalidatePath("/projets");
+  revalidatePath("/chemin");
+}
+
 // ─────────────────────────── Compte ───────────────────────────
 
 export async function deleteAccount() {
