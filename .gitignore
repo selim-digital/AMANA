@@ -43,3 +43,8 @@ next-env.d.ts
 # Secrets OAuth / clés téléchargées
 client_secret_*.json
 *-credentials.json
+
+# Cles API deposees en clair (ne jamais versionner)
+Cl*API*.txt
+*api*key*.txt
+*API*KEY*.txt
