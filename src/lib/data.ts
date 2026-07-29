@@ -42,11 +42,11 @@ export async function getDashboard(userId: string) {
 
 /** Projets groupés par statut (pour /projets et /chemin). */
 export async function getProjectsByStatus(userId: string) {
-  const projects = await prisma.project.findMany({
+  // L'ordre choisi par l'utilisateur (glisser-déposer) prime sur la date.
+  return prisma.project.findMany({
     where: { userId, deletedAt: null },
-    orderBy: { updatedAt: "desc" },
+    orderBy: [{ order: "asc" }, { updatedAt: "desc" }],
   });
-  return projects;
 }
 
 export async function getTasks(userId: string) {
