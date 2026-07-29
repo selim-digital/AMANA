@@ -32,6 +32,10 @@ const DOMAINES = [
   "Relations",
 ];
 
+const GAP = 8; // gap-2
+
+type Drag = { id: string; from: number; dy: number; h: number };
+
 export function ProjectBoard({ projets: initiaux }: { projets: Projet[] }) {
   const router = useRouter();
   const [projets, setProjets] = useState(initiaux);
@@ -40,47 +44,52 @@ export function ProjectBoard({ projets: initiaux }: { projets: Projet[] }) {
   const [erreur, setErreur] = useState<string | null>(null);
   const [, start] = useTransition();
 
-  // Glisser-déposer (pointeur : marche à la souris comme au doigt).
-  const [pris, setPris] = useState<string | null>(null);
-  const [surIdx, setSurIdx] = useState<number | null>(null);
+  const [drag, setDrag] = useState<Drag | null>(null);
+  const startY = useRef(0);
   const refs = useRef<Map<string, HTMLLIElement>>(new Map());
 
   useEffect(() => setProjets(initiaux), [initiaux]);
 
-  function onPointerDown(e: React.PointerEvent, id: string) {
+  /** Index visé, déduit du déplacement vertical. */
+  const cible = drag
+    ? Math.max(0, Math.min(projets.length - 1, drag.from + Math.round(drag.dy / drag.h)))
+    : null;
+
+  function onPointerDown(e: React.PointerEvent, id: string, from: number) {
     e.preventDefault();
-    setPris(id);
+    const el = refs.current.get(id);
+    const h = (el?.offsetHeight ?? 72) + GAP;
+    startY.current = e.clientY;
+    setDrag({ id, from, dy: 0, h });
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
   }
 
   function onPointerMove(e: React.PointerEvent) {
-    if (!pris) return;
-    // Sur quelle carte se trouve le doigt ?
-    let idx: number | null = null;
-    projets.forEach((p, i) => {
-      const el = refs.current.get(p.id);
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      if (e.clientY >= r.top && e.clientY <= r.bottom) idx = i;
-    });
-    setSurIdx(idx);
+    if (!drag) return;
+    setDrag({ ...drag, dy: e.clientY - startY.current });
   }
 
   function onPointerUp() {
-    if (!pris) return;
-    const from = projets.findIndex((p) => p.id === pris);
-    if (surIdx !== null && surIdx !== from && from >= 0) {
+    if (!drag) return;
+    if (cible !== null && cible !== drag.from) {
       const suivant = [...projets];
-      const [item] = suivant.splice(from, 1);
-      suivant.splice(surIdx, 0, item);
+      const [item] = suivant.splice(drag.from, 1);
+      suivant.splice(cible, 0, item);
       setProjets(suivant);
       start(async () => {
         await reorderProjects(suivant.map((p) => p.id));
         router.refresh();
       });
     }
-    setPris(null);
-    setSurIdx(null);
+    setDrag(null);
+  }
+
+  /** De combien cette carte doit-elle s'écarter pour laisser la place ? */
+  function decalage(i: number): number {
+    if (!drag || cible === null || i === drag.from) return 0;
+    if (drag.from < cible && i > drag.from && i <= cible) return -drag.h;
+    if (drag.from > cible && i < drag.from && i >= cible) return drag.h;
+    return 0;
   }
 
   function enregistrer(id: string, champs: Partial<Projet>) {
@@ -95,10 +104,8 @@ export function ProjectBoard({ projets: initiaux }: { projets: Projet[] }) {
         domain: champs.domain,
         status: champs.status as never,
       });
-      if (r && "error" in r && r.error) {
-        setErreur(r.error);
-        router.refresh();
-      } else router.refresh();
+      if (r && "error" in r && r.error) setErreur(r.error);
+      router.refresh();
     });
   }
 
@@ -114,24 +121,31 @@ export function ProjectBoard({ projets: initiaux }: { projets: Projet[] }) {
   if (projets.length === 0) {
     return (
       <div className="rounded-[18px] bg-surface-2 px-4 py-5 text-sm text-ink-soft">
-        Pas encore de projet. Dépose ce que tu as en tête — AMANA t&apos;aidera à en faire des projets
-        clairs.
+        Pas encore de projet. Dépose ce que tu as en tête — AMANA t&apos;aidera à en faire des
+        projets clairs.
       </div>
     );
   }
 
   return (
     <>
-      {erreur && <p className="step-enter rounded-[14px] bg-gold-soft px-4 py-3 text-sm">{erreur}</p>}
+      {erreur && (
+        <p className="step-enter mb-2 rounded-[14px] bg-gold-soft px-4 py-3 text-sm">{erreur}</p>
+      )}
 
-      <p className="text-xs text-ink-faint">
+      <p className="mb-2 text-xs text-ink-faint">
         Glisse un projet par la poignée pour le réordonner. Touche-le pour le préciser.
       </p>
 
-      <ul className="flex touch-none flex-col gap-2" onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
+      <ul
+        className="flex flex-col gap-2"
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
         {projets.map((p, i) => {
-          const actif = pris === p.id;
-          const cible = pris && surIdx === i && !actif;
+          const porte = drag?.id === p.id;
+          const shift = decalage(i);
           return (
             <li
               key={p.id}
@@ -139,32 +153,43 @@ export function ProjectBoard({ projets: initiaux }: { projets: Projet[] }) {
                 if (el) refs.current.set(p.id, el);
                 else refs.current.delete(p.id);
               }}
-              className={`overflow-hidden rounded-[18px] border bg-surface transition-[transform,opacity,border-color] ${
-                actif ? "scale-[1.02] border-gold opacity-90 shadow-lg" : "border-ink/10"
-              } ${cible ? "border-gold/60" : ""}`}
+              style={{
+                transform: porte
+                  ? `translateY(${drag!.dy}px) scale(1.03)`
+                  : `translateY(${shift}px)`,
+                // La carte portée suit le doigt sans latence ; les autres glissent.
+                transition: porte ? "none" : "transform 220ms var(--ease-out)",
+                zIndex: porte ? 30 : 1,
+                position: "relative",
+              }}
+              className={`overflow-hidden rounded-[18px] border bg-surface ${
+                porte ? "border-gold shadow-2xl" : "border-ink/10"
+              }`}
             >
-              <div className="flex items-stretch">
-                {/* Poignée de déplacement */}
-                <button
-                  onPointerDown={(e) => onPointerDown(e, p.id)}
+              <div className="flex items-center gap-1">
+                {/* Poignée : seule zone qui déclenche le glissement. */}
+                <span
+                  onPointerDown={(e) => onPointerDown(e, p.id, i)}
+                  role="button"
+                  tabIndex={0}
                   aria-label={`Déplacer ${p.name}`}
-                  className="flex w-11 flex-none cursor-grab touch-none items-center justify-center text-ink-faint active:cursor-grabbing"
+                  className="flex h-12 w-10 flex-none cursor-grab touch-none items-center justify-center text-ink-faint active:cursor-grabbing"
                 >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
-                    <circle cx="9" cy="6" r="1.6" /><circle cx="15" cy="6" r="1.6" />
-                    <circle cx="9" cy="12" r="1.6" /><circle cx="15" cy="12" r="1.6" />
-                    <circle cx="9" cy="18" r="1.6" /><circle cx="15" cy="18" r="1.6" />
+                  <svg viewBox="0 0 16 16" className="h-4 w-4" fill="currentColor">
+                    <circle cx="6" cy="4" r="1.4" /><circle cx="10" cy="4" r="1.4" />
+                    <circle cx="6" cy="8" r="1.4" /><circle cx="10" cy="8" r="1.4" />
+                    <circle cx="6" cy="12" r="1.4" /><circle cx="10" cy="12" r="1.4" />
                   </svg>
-                </button>
+                </span>
 
                 <button
                   onClick={() => setEdite(edite === p.id ? null : p.id)}
-                  className="press flex flex-1 items-center gap-3 py-3.5 pr-4 text-left"
+                  className="press flex flex-1 items-center gap-3 py-3 pr-4 text-left"
                 >
                   <span className="flex-1">
                     <span className="block text-sm font-semibold">{p.name}</span>
                     <span className="text-xs text-ink-faint">
-                      {STATUTS.find((s) => s.key === p.status)?.label ?? p.status}
+                      {STATUTS.find((s) => s.key === p.status)?.label}
                       {p.domain ? ` · ${p.domain}` : ""}
                     </span>
                   </span>
@@ -174,22 +199,22 @@ export function ProjectBoard({ projets: initiaux }: { projets: Projet[] }) {
 
               {edite === p.id && (
                 <div className="step-enter flex flex-col gap-3 border-t border-ink/10 px-4 py-4">
-                  <Champ label="Nom" value={p.name} onBlur={(v) => enregistrer(p.id, { name: v })} />
+                  <Champ label="Nom" value={p.name} onSave={(v) => enregistrer(p.id, { name: v })} />
                   <Champ
                     label="Vision — à quoi ça ressemble une fois réussi"
                     value={p.vision ?? ""}
                     multi
-                    onBlur={(v) => enregistrer(p.id, { vision: v })}
+                    onSave={(v) => enregistrer(p.id, { vision: v })}
                   />
                   <Champ
-                    label="Objectif concret"
+                    label="Prochaine action"
                     value={p.objective ?? ""}
-                    onBlur={(v) => enregistrer(p.id, { objective: v })}
+                    onSave={(v) => enregistrer(p.id, { objective: v })}
                   />
 
-                  <label className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1.5">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
-                      Domaine de vie
+                      Domaine
                     </span>
                     <select
                       value={p.domain ?? ""}
@@ -201,9 +226,9 @@ export function ProjectBoard({ projets: initiaux }: { projets: Projet[] }) {
                         <option key={d} value={d}>{d}</option>
                       ))}
                     </select>
-                  </label>
+                  </div>
 
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1.5">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
                       Statut
                     </span>
@@ -212,10 +237,10 @@ export function ProjectBoard({ projets: initiaux }: { projets: Projet[] }) {
                         <button
                           key={s.key}
                           onClick={() => enregistrer(p.id, { status: s.key })}
-                          className={`press rounded-full border px-3 py-1.5 text-xs ${
+                          className={`press rounded-full px-3 py-1.5 text-xs ${
                             p.status === s.key
-                              ? "border-gold bg-gold-soft font-semibold"
-                              : "border-ink/15 text-ink-soft"
+                              ? "bg-gold font-semibold text-[#12100D]"
+                              : "bg-surface-2 text-ink-soft"
                           }`}
                         >
                           {s.label}
@@ -228,10 +253,16 @@ export function ProjectBoard({ projets: initiaux }: { projets: Projet[] }) {
                   {confirme === p.id ? (
                     <div className="flex items-center gap-2 rounded-[14px] bg-surface-2 p-3">
                       <span className="flex-1 text-xs text-ink-soft">Supprimer ce projet ?</span>
-                      <button onClick={() => supprimer(p.id)} className="press rounded-full bg-[#B8543F] px-4 py-1.5 text-xs font-semibold text-white">
+                      <button
+                        onClick={() => supprimer(p.id)}
+                        className="press rounded-full bg-[#B8543F] px-4 py-2 text-xs font-semibold text-white"
+                      >
                         Supprimer
                       </button>
-                      <button onClick={() => setConfirme(null)} className="press rounded-full border border-ink/20 px-4 py-1.5 text-xs">
+                      <button
+                        onClick={() => setConfirme(null)}
+                        className="press rounded-full border border-ink/20 px-4 py-2 text-xs"
+                      >
                         Annuler
                       </button>
                     </div>
@@ -256,34 +287,36 @@ export function ProjectBoard({ projets: initiaux }: { projets: Projet[] }) {
 function Champ({
   label,
   value,
-  onBlur,
   multi,
+  onSave,
 }: {
   label: string;
   value: string;
-  onBlur: (v: string) => void;
   multi?: boolean;
+  onSave: (v: string) => void;
 }) {
   const [v, setV] = useState(value);
   useEffect(() => setV(value), [value]);
   const cls =
     "rounded-[14px] border border-ink/15 bg-paper px-3 py-2.5 text-sm outline-none transition-colors focus:border-gold";
   return (
-    <label className="flex flex-col gap-1">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">{label}</span>
+    <label className="flex flex-col gap-1.5">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+        {label}
+      </span>
       {multi ? (
         <textarea
           rows={2}
           value={v}
           onChange={(e) => setV(e.target.value)}
-          onBlur={() => v !== value && onBlur(v)}
+          onBlur={() => v !== value && onSave(v)}
           className={`${cls} resize-none`}
         />
       ) : (
         <input
           value={v}
           onChange={(e) => setV(e.target.value)}
-          onBlur={() => v !== value && onBlur(v)}
+          onBlur={() => v !== value && onSave(v)}
           className={cls}
         />
       )}
