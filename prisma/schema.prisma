@@ -38,6 +38,7 @@ model User {
   memories Memory[]
   events   Event[]
   insights Insight[]
+  conversations Conversation[]
 }
 
 model Account {
@@ -92,6 +93,35 @@ enum Role {
 
 // ─────────────────────────── Domaine AMANA ───────────────────────────
 
+model Conversation {
+  id        String   @id @default(cuid())
+  userId    String
+  // Une conversation peut porter sur un projet précis : c'est le lien entre
+  // le chat et les univers.
+  projectId String?
+  title     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project  Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  messages Message[]
+
+  @@index([userId, updatedAt])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String // "user" | "assistant"
+  content        String
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
 model Profile {
   id         String   @id @default(cuid())
   userId     String   @unique
@@ -142,6 +172,7 @@ model Project {
   user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   goals Goal[]
   tasks Task[]
+  conversations Conversation[]
 }
 
 enum GoalKind {
