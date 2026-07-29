@@ -57,6 +57,10 @@ export function ProjectBoard({ projets: initiaux }: { projets: Projet[] }) {
 
   function onPointerDown(e: React.PointerEvent, id: string, from: number) {
     e.preventDefault();
+    // On replie toute carte ouverte : les hauteurs redeviennent uniformes,
+    // donc le calcul de décalage est juste.
+    setEdite(null);
+    setConfirme(null);
     const el = refs.current.get(id);
     const h = (el?.offsetHeight ?? 72) + GAP;
     startY.current = e.clientY;
@@ -66,7 +70,14 @@ export function ProjectBoard({ projets: initiaux }: { projets: Projet[] }) {
 
   function onPointerMove(e: React.PointerEvent) {
     if (!drag) return;
-    setDrag({ ...drag, dy: e.clientY - startY.current });
+    const dy = e.clientY - startY.current;
+    setDrag((d) => (d ? { ...d, dy } : d));
+
+    // Défilement automatique quand on approche des bords : on peut déplacer
+    // un projet au-delà de l'écran visible.
+    const marge = 90;
+    if (e.clientY < marge) window.scrollBy({ top: -12 });
+    else if (e.clientY > window.innerHeight - marge) window.scrollBy({ top: 12 });
   }
 
   function onPointerUp() {
@@ -155,12 +166,14 @@ export function ProjectBoard({ projets: initiaux }: { projets: Projet[] }) {
               }}
               style={{
                 transform: porte
-                  ? `translateY(${drag!.dy}px) scale(1.03)`
+                  ? `translateY(${drag!.dy}px) scale(1.03) rotate(${Math.max(-2.5, Math.min(2.5, drag!.dy * 0.02))}deg)`
                   : `translateY(${shift}px)`,
                 // La carte portée suit le doigt sans latence ; les autres glissent.
-                transition: porte ? "none" : "transform 220ms var(--ease-out)",
+                transition: porte ? "none" : "transform 240ms var(--ease-out)",
                 zIndex: porte ? 30 : 1,
                 position: "relative",
+                touchAction: "pan-y",
+                willChange: porte || shift ? "transform" : undefined,
               }}
               className={`overflow-hidden rounded-[18px] border bg-surface ${
                 porte ? "border-gold shadow-2xl" : "border-ink/10"

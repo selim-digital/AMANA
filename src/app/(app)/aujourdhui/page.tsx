@@ -3,12 +3,22 @@ import { getDashboard } from "@/lib/data";
 import { Wordmark } from "@/components/AmanaMark";
 import { Chemin } from "@/components/Scenes";
 import { PriorityList, type Priority } from "./PriorityList";
+import { MicroProfil } from "./MicroProfil";
+import { questionsRestantes } from "@/lib/coaching/profils";
 
 /** SCR-DASH — « Aujourd'hui » : ce qui compte, et une seule invitation à agir. */
 export default async function DashboardPage() {
   const session = await auth();
   const userId = session!.user.id;
-  const { user, tasks, projects, activeCount, indices, nudge } = await getDashboard(userId);
+  const { user, profile, tasks, projects, activeCount, indices, nudge } = await getDashboard(userId);
+
+  // Une question de profil à la fois, au fil de l'eau — jamais une série.
+  const restantes = questionsRestantes({
+    disc: (profile?.disc as Record<string, string>) ?? {},
+    wpmot: (profile?.wpmot as Record<string, string>) ?? {},
+    ego: (profile?.ego as Record<string, string>) ?? {},
+  });
+  const prochaine = restantes[0];
 
   const prenom = user?.name?.trim().split(" ")[0] || "toi";
   const initiale = (user?.name?.trim()[0] || "A").toUpperCase();
@@ -82,6 +92,19 @@ export default async function DashboardPage() {
               </span>
             </span>
           </a>
+
+          {prochaine && (
+            <div className="enter" style={{ "--i": 5 } as React.CSSProperties}>
+              <MicroProfil
+                cle={prochaine.instrument.cle}
+                titre={prochaine.instrument.nom}
+                question={prochaine.question.texte}
+                questionId={prochaine.question.id}
+                options={prochaine.question.options}
+                restantes={restantes.length}
+              />
+            </div>
+          )}
 
           {/* Gestes rapides : on n'a jamais à chercher quoi faire ensuite. */}
           <section
