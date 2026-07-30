@@ -18,7 +18,14 @@ export default async function DashboardPage() {
     wpmot: (profile?.wpmot as Record<string, string>) ?? {},
     ego: (profile?.ego as Record<string, string>) ?? {},
   });
-  const prochaine = restantes[0];
+  // Une série de trois questions — jamais une seule, jamais toute la batterie.
+  const serie = restantes.slice(0, 3).map((r) => ({
+    cle: r.instrument.cle,
+    instrument: r.instrument.nom,
+    id: r.question.id,
+    texte: r.question.texte,
+    options: r.question.options,
+  }));
 
   const prenom = user?.name?.trim().split(" ")[0] || "toi";
   const initiale = (user?.name?.trim()[0] || "A").toUpperCase();
@@ -93,16 +100,9 @@ export default async function DashboardPage() {
             </span>
           </a>
 
-          {prochaine && (
+          {serie.length > 0 && (
             <div className="enter" style={{ "--i": 5 } as React.CSSProperties}>
-              <MicroProfil
-                cle={prochaine.instrument.cle}
-                titre={prochaine.instrument.nom}
-                question={prochaine.question.texte}
-                questionId={prochaine.question.id}
-                options={prochaine.question.options}
-                restantes={restantes.length}
-              />
+              <MicroProfil questions={serie} restantes={restantes.length} />
             </div>
           )}
 
