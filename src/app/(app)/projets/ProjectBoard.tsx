@@ -280,12 +280,21 @@ export function ProjectBoard({ projets: initiaux }: { projets: Projet[] }) {
                       </button>
                     </div>
                   ) : (
-                    <button
-                      onClick={() => setConfirme(p.id)}
-                      className="self-start text-xs text-ink-faint underline-offset-4 hover:underline"
-                    >
-                      Supprimer ce projet
-                    </button>
+                    <div className="flex items-center justify-between gap-3">
+                      {/* La porte : on parle de CE projet, AMANA le sait déjà. */}
+                      <a
+                        href={`/conversation?projet=${p.id}`}
+                        className="press rounded-full bg-ink px-4 py-2 text-xs font-semibold text-paper"
+                      >
+                        En parler à AMANA
+                      </a>
+                      <button
+                        onClick={() => setConfirme(p.id)}
+                        className="text-xs text-ink-faint underline-offset-4 hover:underline"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
                   )}
                 </div>
               )}

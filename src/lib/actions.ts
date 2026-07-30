@@ -174,6 +174,35 @@ export async function toggleTask(taskId: string) {
   revalidatePath("/aujourdhui");
 }
 
+// ─────────────────────────── Depuis la conversation ───────────────────────────
+
+/** L'action décidée en conversation, validée d'un geste par la personne. */
+export async function creerActionDepuisChat(
+  titre: string,
+  projectId?: string,
+  quand?: "aujourd'hui" | "demain" | "cette semaine",
+) {
+  const userId = await requireUserId();
+  const jours = quand === "demain" ? 1 : quand === "cette semaine" ? 5 : 0;
+  const dueAt = new Date();
+  dueAt.setDate(dueAt.getDate() + jours);
+  dueAt.setHours(18, 0, 0, 0);
+
+  await prisma.task.create({
+    data: {
+      userId,
+      projectId: projectId ?? null,
+      title: titre,
+      kind: "TASK",
+      priority: jours === 0 ? "ESSENTIAL" : "NORMAL",
+      dueAt,
+    },
+  });
+  await logEvent(userId, "task_created", { source: "conversation", quand });
+  revalidatePath("/aujourdhui");
+  revalidatePath("/projets");
+}
+
 // ─────────────────────────── Lecture de la personne ───────────────────────────
 
 /** Enregistre une réponse de profil (DISC, WPMOT ou ÉGO), au fil de l'eau. */
