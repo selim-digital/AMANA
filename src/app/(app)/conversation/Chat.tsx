@@ -1,25 +1,35 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { creerActionDepuisChat } from "@/lib/actions";
 
 type Msg = { role: "user" | "assistant"; content: string };
 type Historique = { id: string; title: string; projet: string | null; nb: number; date: string };
+type Cadrage = { titre: string; sousTitre: string; ouverture: string; amorces: string[] };
+type Sujet = { projet?: string; tache?: string; etape?: string; mode?: string };
 
-const AMORCES = [
-  "Je suis perdu, aide-moi à y voir clair",
-  "J'ai trop de choses en tête",
-  "Je bloque sur quelque chose",
-];
+/** Détecte la proposition d'action dans la réponse (l'IA annonce, l'UI valide). */
+function actionProposee(texte: string): { titre: string; projet?: string } | null {
+  const m = texte.match(/«\s*([^»]{6,120})\s*»/);
+  if (!m) return null;
+  const avant = texte.slice(0, m.index ?? 0).toLowerCase();
+  if (!/(propos|action|valider|juste en dessous|ajouter)/.test(avant)) return null;
+  return { titre: m[1].trim() };
+}
 
 export function Chat({
-  projet,
+  cadrage,
+  sujet,
+  projetLie,
   conversationId,
   messagesInitiaux,
   historique,
 }: {
-  projet: { id: string; name: string } | null;
+  cadrage: Cadrage;
+  sujet: Sujet;
+  projetLie: { id: string; name: string } | null;
   conversationId?: string;
   messagesInitiaux: Msg[];
   historique: Historique[];
@@ -30,6 +40,8 @@ export function Chat({
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [voirHistorique, setVoirHistorique] = useState(false);
+  const [ajoutee, setAjoutee] = useState<string | null>(null);
+  const [, start] = useTransition();
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,7 +59,7 @@ export function Chat({
       const res = await fetch("/api/conversation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next, conversationId: convId, projectId: projet?.id }),
+        body: JSON.stringify({ messages: next, conversationId: convId, ...sujet }),
       });
       if (!res.ok || !res.body) throw new Error("réseau");
 
@@ -65,8 +77,6 @@ export function Chat({
         const current = acc;
         setMessages((m) => [...m.slice(0, -1), { role: "assistant", content: current }]);
       }
-      // Les actions créées pendant l'échange doivent apparaître ailleurs.
-      router.refresh();
     } catch {
       setMessages((m) => [
         ...m,
@@ -81,24 +91,22 @@ export function Chat({
     }
   }
 
+  const derniere = messages[messages.length - 1];
+  const proposition =
+    derniere?.role === "assistant" && !busy ? actionProposee(derniere.content) : null;
+
   return (
     <div className="flex h-[calc(100dvh-9rem)] flex-col lg:h-[calc(100dvh-3rem)]">
-      {/* En-tête : le lien avec le projet est visible en permanence. */}
       <header className="flex items-center gap-3 border-b border-ink/10 px-5 py-3">
         <div className="min-w-0 flex-1">
-          <h1 className="voice-amana text-lg leading-tight">
-            {projet ? "À propos de ce projet" : "En parler"}
-          </h1>
-          {projet ? (
-            <Link
-              href="/projets"
-              className="truncate text-xs font-semibold text-gold-deep hover:underline"
-            >
-              {projet.name} →
+          <h1 className="voice-amana text-lg leading-tight">{cadrage.titre}</h1>
+          {projetLie ? (
+            <Link href="/projets" className="truncate text-xs font-semibold text-gold-deep hover:underline">
+              {projetLie.name} →
             </Link>
           ) : (
-            <p className="text-[11px] uppercase tracking-[0.16em] text-ink-faint">
-              AMANA connaît tes projets
+            <p className="truncate text-[11px] uppercase tracking-[0.16em] text-ink-faint">
+              {cadrage.sousTitre}
             </p>
           )}
         </div>
@@ -113,7 +121,7 @@ export function Chat({
         )}
         {messages.length > 0 && (
           <Link
-            href={projet ? `/conversation?projet=${projet.id}` : "/conversation"}
+            href="/conversation"
             className="press rounded-full bg-ink px-3.5 py-1.5 text-xs font-semibold text-paper"
           >
             Nouveau
@@ -121,7 +129,6 @@ export function Chat({
         )}
       </header>
 
-      {/* Historique : les échanges passés sont retrouvables. */}
       {voirHistorique && (
         <div className="step-enter scroll-soft max-h-64 overflow-y-auto border-b border-ink/10 bg-surface-2/60 px-5 py-3">
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
@@ -130,10 +137,7 @@ export function Chat({
           <ul className="flex flex-col gap-1.5">
             {historique.map((h) => (
               <li key={h.id}>
-                <Link
-                  href={`/conversation?c=${h.id}`}
-                  className="press block rounded-[14px] bg-surface px-3.5 py-2.5"
-                >
+                <Link href={`/conversation?c=${h.id}`} className="press block rounded-[14px] bg-surface px-3.5 py-2.5">
                   <span className="block truncate text-sm">{h.title}</span>
                   <span className="text-xs text-ink-faint">
                     {h.projet ? `${h.projet} · ` : ""}
@@ -149,10 +153,8 @@ export function Chat({
       <div className="scroll-soft flex-1 space-y-3 overflow-y-auto px-5 py-5">
         {messages.length === 0 && (
           <div className="flex flex-col gap-3 pt-8">
-            <p className="voice-amana text-center text-lg text-ink-soft">
-              {projet ? `Où en es-tu sur « ${projet.name} » ?` : "De quoi as-tu besoin de parler ?"}
-            </p>
-            {AMORCES.map((a, i) => (
+            <p className="voice-amana text-center text-lg text-ink-soft">{cadrage.ouverture}</p>
+            {cadrage.amorces.map((a, i) => (
               <button
                 key={a}
                 onClick={() => send(a)}
@@ -174,13 +176,57 @@ export function Chat({
           >
             {m.content || (
               <span className="inline-flex gap-1">
-                <span className="nudge inline-block h-1.5 w-1.5 rounded-full bg-ink-faint" />
-                <span className="nudge inline-block h-1.5 w-1.5 rounded-full bg-ink-faint" style={{ animationDelay: "0.2s" }} />
-                <span className="nudge inline-block h-1.5 w-1.5 rounded-full bg-ink-faint" style={{ animationDelay: "0.4s" }} />
+                {[0, 0.2, 0.4].map((d) => (
+                  <span
+                    key={d}
+                    className="nudge inline-block h-1.5 w-1.5 rounded-full bg-ink-faint"
+                    style={{ animationDelay: `${d}s` }}
+                  />
+                ))}
               </span>
             )}
           </div>
         ))}
+
+        {/* La proposition d'action ne devient réelle que si TU la valides. */}
+        {proposition && !ajoutee && (
+          <div className="step-enter rounded-[18px] border border-gold/40 bg-gold-soft p-4">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gold-deep">
+              Action proposée
+            </span>
+            <p className="mt-1 text-[15px] font-semibold">{proposition.titre}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(["aujourd'hui", "demain", "cette semaine"] as const).map((quand) => (
+                <button
+                  key={quand}
+                  onClick={() =>
+                    start(async () => {
+                      await creerActionDepuisChat(proposition.titre, projetLie?.id, quand);
+                      setAjoutee(proposition.titre);
+                      router.refresh();
+                    })
+                  }
+                  className="press rounded-full bg-gold px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#12100D]"
+                >
+                  {quand}
+                </button>
+              ))}
+              <button
+                onClick={() => setAjoutee(proposition.titre)}
+                className="press rounded-full border border-ink/20 px-4 py-2 text-xs font-semibold text-ink-soft"
+              >
+                Pas maintenant
+              </button>
+            </div>
+          </div>
+        )}
+
+        {ajoutee && (
+          <p className="step-enter text-center text-xs text-gold-deep">
+            Ajouté à tes priorités. Tu le retrouveras dans « Aujourd&apos;hui ».
+          </p>
+        )}
+
         <div ref={endRef} />
       </div>
 

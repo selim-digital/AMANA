@@ -52,13 +52,13 @@ export async function getDashboard(userId: string) {
     nudge = {
       texte: "Tout ce qui comptait est fait. C'est le moment de clore la journée.",
       cta: "Faire mon bilan",
-      href: "/conversation",
+      href: "/conversation?mode=bilan",
     };
   } else if (heure >= 18) {
     nudge = {
       texte: "La journée se termine. Deux minutes pour la clore, et demain sera plus clair.",
       cta: "Clore ma journée",
-      href: "/conversation",
+      href: "/conversation?mode=bilan",
     };
   } else if (activeCount >= 3) {
     nudge = {

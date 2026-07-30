@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { cadrageClient, nomDuSujet, sujetDepuisParams } from "@/lib/ia/contexte";
 import { Chat } from "./Chat";
 
 export const dynamic = "force-dynamic";
@@ -7,22 +8,25 @@ export const dynamic = "force-dynamic";
 export default async function ConversationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ projet?: string; c?: string }>;
+  searchParams: Promise<{
+    projet?: string;
+    tache?: string;
+    etape?: string;
+    mode?: string;
+    c?: string;
+  }>;
 }) {
-  const { projet: projectId, c: convId } = await searchParams;
+  const params = await searchParams;
   const session = await auth();
   const userId = session!.user.id;
 
-  const [projet, conversation, historique] = await Promise.all([
-    projectId
-      ? prisma.project.findFirst({
-          where: { id: projectId, userId },
-          select: { id: true, name: true },
-        })
-      : null,
-    convId
+  const sujet = sujetDepuisParams(params);
+
+  const [nom, conversation, historique] = await Promise.all([
+    nomDuSujet(userId, sujet),
+    params.c
       ? prisma.conversation.findFirst({
-          where: { id: convId, userId },
+          where: { id: params.c, userId },
           include: {
             messages: { orderBy: { createdAt: "asc" } },
             project: { select: { id: true, name: true } },
@@ -43,9 +47,13 @@ export default async function ConversationPage({
     }),
   ]);
 
+  const cadrage = cadrageClient(sujet, nom ?? conversation?.project?.name);
+
   return (
     <Chat
-      projet={conversation?.project ?? projet}
+      cadrage={cadrage}
+      sujet={params}
+      projetLie={conversation?.project ?? null}
       conversationId={conversation?.id}
       messagesInitiaux={
         conversation?.messages.map((m) => ({
