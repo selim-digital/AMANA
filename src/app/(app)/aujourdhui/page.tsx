@@ -4,6 +4,7 @@ import { Wordmark } from "@/components/AmanaMark";
 import { Chemin } from "@/components/Scenes";
 import { PriorityList, type Priority } from "./PriorityList";
 import { MicroProfil } from "./MicroProfil";
+import { ModaleAction } from "./ModaleAction";
 import { questionsRestantes } from "@/lib/coaching/profils";
 
 /** SCR-DASH — « Aujourd'hui » : ce qui compte, et une seule invitation à agir. */
@@ -44,8 +45,18 @@ export default async function DashboardPage() {
     { label: "Alignement", value: indices.alignement, cls: "stroke-gold" },
   ];
 
+  const jour = new Date().toISOString().slice(0, 10);
+
   return (
     <main className="flex flex-col gap-5 px-5 py-6">
+      {/* AMANA interpelle une fois par jour, sans jamais culpabiliser. */}
+      <ModaleAction
+        titre="Une chose pour aujourd'hui"
+        texte={nudge.texte}
+        cta={nudge.cta}
+        href={nudge.href}
+        cle={`${jour}-${nudge.cta}`}
+      />
       <header
         className="enter flex items-center justify-between lg:hidden"
         style={{ "--i": 0 } as React.CSSProperties}
