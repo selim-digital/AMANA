@@ -93,7 +93,9 @@ export async function POST(req: Request) {
           ]
         : messages),
     ],
-    stopWhen: stepCountIs(6),
+    // Trois pas suffisent : consulter au plus un outil, puis répondre. Au-delà,
+    // la personne attend devant un écran muet.
+    stopWhen: stepCountIs(3),
     // Purge les résultats de recherche web des pas suivants (poste de coût n°1).
     providerOptions: PURGE_OUTILS,
     tools: {
@@ -119,8 +121,8 @@ export async function POST(req: Request) {
             echeance ? ` — ${echeance}` : ""
           }. Dis-lui qu'elle peut la valider juste en dessous.`,
       }),
-      web_search: anthropic.tools.webSearch_20260209({ maxUses: 2 }),
-      web_fetch: anthropic.tools.webFetch_20260209({ maxUses: 2 }),
+      web_search: anthropic.tools.webSearch_20260209({ maxUses: 1 }),
+      web_fetch: anthropic.tools.webFetch_20260209({ maxUses: 1 }),
     },
     onFinish: async ({ text }) => {
       if (userId && convId && text) {
