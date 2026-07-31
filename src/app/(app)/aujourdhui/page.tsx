@@ -5,13 +5,15 @@ import { Chemin } from "@/components/Scenes";
 import { PriorityList, type Priority } from "./PriorityList";
 import { MicroProfil } from "./MicroProfil";
 import { ModaleAction } from "./ModaleAction";
+import { ObjectifsAnnee } from "./ObjectifsAnnee";
 import { questionsRestantes } from "@/lib/coaching/profils";
 
 /** SCR-DASH — « Aujourd'hui » : ce qui compte, et une seule invitation à agir. */
 export default async function DashboardPage() {
   const session = await auth();
   const userId = session!.user.id;
-  const { user, profile, tasks, projects, activeCount, indices, nudge } = await getDashboard(userId);
+  const { user, profile, tasks, projects, activeCount, objectifsAnnee, indices, nudge } =
+    await getDashboard(userId);
 
   // Une question de profil à la fois, au fil de l'eau — jamais une série.
   const restantes = questionsRestantes({
@@ -196,9 +198,16 @@ export default async function DashboardPage() {
             </a>
           )}
 
+          <div className="enter" style={{ "--i": 6 } as React.CSSProperties}>
+            <ObjectifsAnnee
+              objectifs={objectifsAnnee.map((o) => ({ id: o.id, label: o.label, why: o.why }))}
+              annee={new Date().getFullYear()}
+            />
+          </div>
+
           <section
             className="enter grid grid-cols-3 gap-2.5"
-            style={{ "--i": 6 } as React.CSSProperties}
+            style={{ "--i": 7 } as React.CSSProperties}
           >
             {rings.map((k, i) => {
               const off = 151 - (k.value / 100) * 151;

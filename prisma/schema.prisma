@@ -39,6 +39,7 @@ model User {
   events   Event[]
   insights Insight[]
   conversations Conversation[]
+  annualGoals AnnualGoal[]
 }
 
 model Account {
@@ -175,6 +176,64 @@ model Project {
   goals Goal[]
   tasks Task[]
   conversations Conversation[]
+  okrs  Okr[]
+}
+
+/** Les 3 objectifs de l'année : ce qui donnera le sentiment de s'être accompli. */
+model AnnualGoal {
+  id        String   @id @default(cuid())
+  userId    String
+  year      Int
+  label     String
+  why       String? // pourquoi celui-là compte
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, year])
+}
+
+/** Un cap sur un trimestre pour un projet : un objectif, des résultats mesurables. */
+model Okr {
+  id        String   @id @default(cuid())
+  projectId String
+  period    String // ex. « 2026-Q3 »
+  objective String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  keyResults KeyResult[]
+
+  @@unique([projectId, period])
+}
+
+model KeyResult {
+  id      String  @id @default(cuid())
+  okrId   String
+  label   String
+  target  String? // ex. « 12 entretiens »
+  current Int     @default(0)
+  target_ Int     @default(100)
+  order   Int     @default(0)
+
+  okr    Okr           @relation(fields: [okrId], references: [id], onDelete: Cascade)
+  checks WeeklyCheck[]
+}
+
+/** Le point hebdomadaire : où en est ce résultat clé cette semaine. */
+model WeeklyCheck {
+  id          String   @id @default(cuid())
+  keyResultId String
+  weekOf      DateTime // lundi de la semaine
+  value       Int
+  note        String?
+  createdAt   DateTime @default(now())
+
+  keyResult KeyResult @relation(fields: [keyResultId], references: [id], onDelete: Cascade)
+
+  @@unique([keyResultId, weekOf])
 }
 
 enum GoalKind {

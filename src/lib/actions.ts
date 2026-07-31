@@ -288,6 +288,98 @@ export async function reorderProjects(ids: string[]) {
   revalidatePath("/chemin");
 }
 
+// ─────────────────── Objectifs de l'année & OKR ───────────────────
+
+/** Le trimestre courant, au format « 2026-Q3 » (interne : ce fichier n'exporte
+ *  que des actions serveur asynchrones). */
+function trimestreCourant(d = new Date()) {
+  return `${d.getFullYear()}-Q${Math.floor(d.getMonth() / 3) + 1}`;
+}
+
+/** Les 3 objectifs qui donneront le sentiment d'une année accomplie. */
+export async function definirObjectifsAnnee(objectifs: { label: string; why?: string }[]) {
+  const userId = await requireUserId();
+  const year = new Date().getFullYear();
+
+  await prisma.annualGoal.deleteMany({ where: { userId, year } });
+  await prisma.annualGoal.createMany({
+    data: objectifs
+      .filter((o) => o.label.trim())
+      .slice(0, 3)
+      .map((o, i) => ({ userId, year, label: o.label.trim(), why: o.why?.trim() || null, order: i })),
+  });
+
+  await logEvent(userId, "annual_goals_set", { year, n: objectifs.length });
+  revalidatePath("/aujourdhui");
+}
+
+/** Pose un cap trimestriel sur un projet : un objectif, jusqu'à 3 résultats clés. */
+export async function definirOkr(
+  projectId: string,
+  objective: string,
+  keyResults: { label: string; target?: string }[],
+  period = trimestreCourant(),
+) {
+  const userId = await requireUserId();
+  const projet = await prisma.project.findFirst({ where: { id: projectId, userId } });
+  if (!projet) return;
+
+  const existant = await prisma.okr.findUnique({
+    where: { projectId_period: { projectId, period } },
+  });
+  if (existant) await prisma.okr.delete({ where: { id: existant.id } });
+
+  await prisma.okr.create({
+    data: {
+      projectId,
+      period,
+      objective: objective.trim(),
+      keyResults: {
+        create: keyResults
+          .filter((k) => k.label.trim())
+          .slice(0, 3)
+          .map((k, i) => ({ label: k.label.trim(), target: k.target?.trim() || null, order: i })),
+      },
+    },
+  });
+
+  await logEvent(userId, "okr_defined", { projectId, period });
+  revalidatePath("/projets");
+  revalidatePath("/aujourdhui");
+}
+
+/** Le point de la semaine sur un résultat clé. */
+export async function pointerResultat(keyResultId: string, value: number, note?: string) {
+  const userId = await requireUserId();
+
+  // Lundi de la semaine courante.
+  const d = new Date();
+  const jour = (d.getDay() + 6) % 7;
+  const lundi = new Date(d.getFullYear(), d.getMonth(), d.getDate() - jour);
+
+  await prisma.weeklyCheck.upsert({
+    where: { keyResultId_weekOf: { keyResultId, weekOf: lundi } },
+    create: { keyResultId, weekOf: lundi, value, note: note?.trim() || null },
+    update: { value, note: note?.trim() || null },
+  });
+  await prisma.keyResult.update({ where: { id: keyResultId }, data: { current: value } });
+
+  await logEvent(userId, "kpi_checked", { keyResultId, value });
+  revalidatePath("/projets");
+}
+
+/** Décale un projet qui n'a pas de cap : mieux vaut l'assumer que le laisser traîner. */
+export async function decalerProjet(projectId: string) {
+  const userId = await requireUserId();
+  await prisma.project.updateMany({
+    where: { id: projectId, userId },
+    data: { status: "WAITING" },
+  });
+  await logEvent(userId, "project_postponed", { projectId, raison: "sans_okr" });
+  revalidatePath("/projets");
+  revalidatePath("/aujourdhui");
+}
+
 // ─────────────────────────── Compte ───────────────────────────
 
 export async function deleteAccount() {
