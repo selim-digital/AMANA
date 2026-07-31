@@ -504,3 +504,27 @@ export async function getCheminData(): Promise<CheminData> {
     })),
   };
 }
+
+// ─────────────────────────── Valeurs ───────────────────────────
+
+/** Ajoute une valeur cardinale. Le chat écrit aussi ici : même source, même vérité. */
+export async function ajouterValeur(label: string) {
+  const userId = await requireUserId();
+  const propre = label.trim();
+  if (propre.length < 2 || propre.length > 60) return;
+  const deja = await prisma.value.findFirst({
+    where: { userId, label: { equals: propre, mode: "insensitive" } },
+  });
+  if (deja) return;
+  await prisma.value.create({ data: { userId, label: propre } });
+  await logEvent(userId, "value_added", { source: "profil" });
+  revalidatePath("/profil");
+  revalidatePath("/chemin");
+}
+
+export async function supprimerValeur(id: string) {
+  const userId = await requireUserId();
+  await prisma.value.deleteMany({ where: { id, userId } });
+  revalidatePath("/profil");
+  revalidatePath("/chemin");
+}
