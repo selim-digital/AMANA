@@ -45,6 +45,7 @@ export function Chat({
   const [pieces, setPieces] = useState<PieceJointe[]>([]);
   const [texteJoint, setTexteJoint] = useState("");
   const [refus, setRefus] = useState<string | null>(null);
+  const [attenteLongue, setAttenteLongue] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [, start] = useTransition();
   const endRef = useRef<HTMLDivElement>(null);
@@ -60,6 +61,8 @@ export function Chat({
     setMessages(next);
     setInput("");
     setBusy(true);
+    // Au-delà de six secondes, on dit ce qui se passe : une attente muette inquiète.
+    const minuteur = setTimeout(() => setAttenteLongue(true), 6000);
     try {
       const res = await fetch("/api/conversation", {
         method: "POST",
@@ -92,6 +95,8 @@ export function Chat({
       ]);
       setInput(content);
     } finally {
+      clearTimeout(minuteur);
+      setAttenteLongue(false);
       setBusy(false);
       setPieces([]);
       setTexteJoint("");
@@ -202,14 +207,23 @@ export function Chat({
             }`}
           >
             {m.content || (
-              <span className="inline-flex gap-1">
-                {[0, 0.2, 0.4].map((d) => (
-                  <span
-                    key={d}
-                    className="nudge inline-block h-1.5 w-1.5 rounded-full bg-ink-faint"
-                    style={{ animationDelay: `${d}s` }}
-                  />
-                ))}
+              <span className="inline-flex items-center gap-2">
+                <span className="inline-flex gap-1">
+                  {[0, 0.2, 0.4].map((d) => (
+                    <span
+                      key={d}
+                      className="nudge inline-block h-1.5 w-1.5 rounded-full bg-ink-faint"
+                      style={{ animationDelay: `${d}s` }}
+                    />
+                  ))}
+                </span>
+                {/* Une attente muette inquiète : au-delà de six secondes, on dit
+                    ce qui se passe. */}
+                {attenteLongue && (
+                  <span className="step-enter text-xs text-ink-faint">
+                    AMANA prend le temps de chercher…
+                  </span>
+                )}
               </span>
             )}
           </div>
