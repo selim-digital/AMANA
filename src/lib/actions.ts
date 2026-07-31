@@ -456,8 +456,11 @@ export async function deleteAccount() {
 
 export type CheminData = {
   vision: string | null;
+  values: string[];
+  objectifsAnnee: string[];
   taskCount: number;
   projects: {
+    id: string;
     name: string;
     status: string;
     progress: number;
@@ -468,18 +471,31 @@ export type CheminData = {
 
 export async function getCheminData(): Promise<CheminData> {
   const userId = await requireUserId();
-  const [profile, projects, taskCount] = await Promise.all([
+  const [profile, projects, taskCount, valeurs, objectifs] = await Promise.all([
     prisma.profile.findUnique({ where: { userId } }),
     prisma.project.findMany({
       where: { userId, deletedAt: null },
       orderBy: { updatedAt: "desc" },
     }),
     prisma.task.count({ where: { userId, deletedAt: null } }),
+    prisma.value.findMany({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
+      select: { label: true },
+    }),
+    prisma.annualGoal.findMany({
+      where: { userId, year: new Date().getFullYear() },
+      orderBy: { order: "asc" },
+      select: { label: true },
+    }),
   ]);
   return {
     vision: profile?.vision ?? null,
+    values: valeurs.map((v) => v.label),
+    objectifsAnnee: objectifs.map((o) => o.label),
     taskCount,
     projects: projects.map((p) => ({
+      id: p.id,
       name: p.name,
       status: p.status,
       progress: p.progress,

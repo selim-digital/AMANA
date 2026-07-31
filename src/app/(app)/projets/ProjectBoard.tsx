@@ -286,7 +286,7 @@ export function ProjectBoard({ projets: initiaux }: { projets: Projet[] }) {
                         href={`/conversation?projet=${p.id}`}
                         className="press rounded-full bg-ink px-4 py-2 text-xs font-semibold text-paper"
                       >
-                        En parler à AMANA
+                        En parler
                       </a>
                       <button
                         onClick={() => setConfirme(p.id)}
