@@ -28,6 +28,7 @@ model User {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   lastLoginAt    DateTime?
+  notifyEmail    Boolean   @default(true)
 
   accounts Account[]
   sessions Session[]
@@ -40,6 +41,7 @@ model User {
   insights Insight[]
   conversations Conversation[]
   annualGoals AnnualGoal[]
+  notifications Notification[]
 }
 
 model Account {
@@ -177,6 +179,23 @@ model Project {
   tasks Task[]
   conversations Conversation[]
   okrs  Okr[]
+}
+
+/** Un signal envoyé à la personne : dans l'app, et par email si elle s'absente. */
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  kind      String // "relance" | "cap_manquant" | "bilan" | "encouragement"
+  title     String
+  body      String
+  href      String?
+  readAt    DateTime?
+  emailedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
 }
 
 /** Les 3 objectifs de l'année : ce qui donnera le sentiment de s'être accompli. */

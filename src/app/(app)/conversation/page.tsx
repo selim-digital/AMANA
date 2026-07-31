@@ -51,6 +51,9 @@ export default async function ConversationPage({
 
   return (
     <Chat
+      // La clé force le remontage quand on change d'échange : sans elle, l'état
+      // local garderait les messages de la conversation précédente.
+      key={conversation?.id ?? `nouveau-${params.projet ?? params.tache ?? params.etape ?? params.mode ?? ""}`}
       cadrage={cadrage}
       sujet={params}
       projetLie={conversation?.project ?? null}
