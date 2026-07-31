@@ -53,6 +53,18 @@ const items: Item[] = [
     ),
   },
   {
+    href: "/deepdive",
+    label: "La plongée",
+    short: "Plongée",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" {...stroke}>
+        <circle cx="12" cy="12" r="8" />
+        <circle cx="12" cy="12" r="3.5" />
+        <circle cx="12" cy="12" r="1" className="fill-gold" stroke="none" />
+      </svg>
+    ),
+  },
+  {
     href: "/profil",
     label: "Profil",
     short: "Profil",
@@ -159,9 +171,14 @@ export function AppNav() {
             Déposer
           </Link>
 
-          {items.slice(2).map((it) => (
-            <NavTab key={it.href} item={it} active={isActive(it.href)} />
-          ))}
+          {/* La plongée n'est pas un geste quotidien : elle reste hors de la
+              barre mobile, accessible depuis le tableau de bord. */}
+          {items
+            .slice(2)
+            .filter((it) => it.href !== "/deepdive")
+            .map((it) => (
+              <NavTab key={it.href} item={it} active={isActive(it.href)} />
+            ))}
         </div>
       </nav>
     </>

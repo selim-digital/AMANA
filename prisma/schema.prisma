@@ -42,6 +42,7 @@ model User {
   conversations Conversation[]
   annualGoals AnnualGoal[]
   notifications Notification[]
+  deepDives DeepDiveSession[]
 }
 
 model Account {
@@ -179,6 +180,45 @@ model Project {
   tasks Task[]
   conversations Conversation[]
   okrs  Okr[]
+}
+
+/** Une plongée : descente par niveaux, hypothèse par hypothèse. */
+model DeepDiveSession {
+  id        String    @id @default(cuid())
+  userId    String
+  niveau    Int       @default(1) // 1 faits · 2 croisements · 3 artefacts · 4 manière
+  status    String    @default("en_cours") // en_cours | close
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  closedAt  DateTime?
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  signaux Signal[]
+
+  @@index([userId, updatedAt])
+}
+
+enum Verdict {
+  EN_ATTENTE
+  VALIDE
+  NUANCE
+  INVALIDE
+}
+
+/** Une hypothèse soumise au jugement de la personne — jamais une conclusion. */
+model Signal {
+  id        String   @id @default(cuid())
+  sessionId String
+  niveau    Int
+  hypothese String
+  fondement String? // ce sur quoi elle s'appuie
+  verdict   Verdict  @default(EN_ATTENTE)
+  verbatim  String? // la réponse de la personne, mot pour mot
+  createdAt DateTime @default(now())
+
+  session DeepDiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, niveau])
 }
 
 /** Un signal envoyé à la personne : dans l'app, et par email si elle s'absente. */
