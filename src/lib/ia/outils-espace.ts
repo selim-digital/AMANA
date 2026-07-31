@@ -1,0 +1,264 @@
+import "server-only";
+import { tool } from "ai";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import type { ProjectStatus } from "@prisma/client";
+
+/**
+ * Les mains du chat sur l'espace de la personne.
+ *
+ * Jusqu'ici l'IA lisait le contexte mais ne pouvait presque rien y inscrire :
+ * ce qu'on lui confiait se perdait. Ici, elle peut lire l'ensemble et écrire
+ * ce qui est structurel et réversible.
+ *
+ * La frontière : ce qui est **déclaratif** (valeurs, projets, objectifs, cap
+ * du trimestre) s'enregistre directement — la personne l'ajuste ensuite d'un
+ * geste dans l'interface. Ce qui est un **engagement à agir** (créer une
+ * action) reste une proposition qu'elle valide. Cette règle vient du produit,
+ * pas d'une prudence technique.
+ */
+
+const STATUTS: Record<string, ProjectStatus> = {
+  actif: "ACTIVE",
+  secondaire: "SECONDARY",
+  attente: "WAITING",
+  idee: "IDEA",
+  idée: "IDEA",
+  archive: "ARCHIVED",
+  archivé: "ARCHIVED",
+};
+
+function trimestre(d = new Date()) {
+  return `${d.getFullYear()}-Q${Math.floor(d.getMonth() / 3) + 1}`;
+}
+
+/** Retrouve un projet par son nom, sans exiger l'orthographe exacte. */
+async function trouverProjet(userId: string, nom: string) {
+  const cible = nom.trim().toLowerCase();
+  const projets = await prisma.project.findMany({
+    where: { userId, deletedAt: null },
+    select: { id: true, name: true },
+  });
+  return (
+    projets.find((p) => p.name.toLowerCase() === cible) ??
+    projets.find((p) => p.name.toLowerCase().includes(cible)) ??
+    projets.find((p) => cible.includes(p.name.toLowerCase())) ??
+    null
+  );
+}
+
+export function outilsEspace(userId: string) {
+  return {
+    lire_espace: tool({
+      description:
+        "Lit l'état complet de l'espace de la personne : ses projets et leur cap trimestriel, ses actions en cours, ses valeurs, ses objectifs de l'année. À appeler dès qu'une réponse dépend de ce qu'elle a déjà posé.",
+      inputSchema: z.object({}),
+      execute: async () => {
+        const annee = new Date().getFullYear();
+        const [projets, taches, valeurs, objectifs] = await Promise.all([
+          prisma.project.findMany({
+            where: { userId, deletedAt: null },
+            orderBy: { order: "asc" },
+            select: {
+              name: true,
+              status: true,
+              vision: true,
+              objective: true,
+              progress: true,
+              okrs: {
+                where: { period: trimestre() },
+                select: {
+                  objective: true,
+                  keyResults: { select: { label: true, current: true, target_: true } },
+                },
+              },
+            },
+          }),
+          prisma.task.findMany({
+            where: { userId, deletedAt: null, status: { in: ["TODO", "IN_PROGRESS"] } },
+            orderBy: { createdAt: "asc" },
+            take: 20,
+            select: { title: true, dueAt: true, project: { select: { name: true } } },
+          }),
+          prisma.value.findMany({ where: { userId }, select: { label: true } }),
+          prisma.annualGoal.findMany({
+            where: { userId, year: annee },
+            orderBy: { order: "asc" },
+            select: { label: true, why: true },
+          }),
+        ]);
+
+        return {
+          valeurs: valeurs.map((v) => v.label),
+          objectifsDeLAnnee: objectifs.map((o) => (o.why ? `${o.label} — ${o.why}` : o.label)),
+          projets: projets.map((p) => ({
+            nom: p.name,
+            statut: p.status,
+            vision: p.vision,
+            objectif: p.objective,
+            avancement: `${p.progress} %`,
+            capDuTrimestre: p.okrs[0]
+              ? {
+                  objectif: p.okrs[0].objective,
+                  resultats: p.okrs[0].keyResults.map(
+                    (k) => `${k.label} (${k.current}/${k.target_})`,
+                  ),
+                }
+              : null,
+          })),
+          actionsEnCours: taches.map((t) => ({
+            titre: t.title,
+            projet: t.project?.name ?? null,
+            echeance: t.dueAt ? t.dueAt.toISOString().slice(0, 10) : null,
+          })),
+        };
+      },
+    }),
+
+    noter_valeurs: tool({
+      description:
+        "Enregistre dans son profil les valeurs fondamentales que la personne vient d'énoncer. À utiliser dès qu'elle nomme ce qui compte pour elle. Ne rien inventer : uniquement ses mots.",
+      inputSchema: z.object({
+        valeurs: z.array(z.string()).describe("Ses valeurs, un mot ou une courte expression chacune"),
+      }),
+      execute: async ({ valeurs }) => {
+        const propres = valeurs.map((v) => v.trim()).filter((v) => v.length > 1 && v.length <= 60);
+        if (!propres.length) return "Aucune valeur exploitable.";
+        const deja = await prisma.value.findMany({ where: { userId }, select: { label: true } });
+        const connues = new Set(deja.map((v) => v.label.toLowerCase()));
+        const nouvelles = propres.filter((v) => !connues.has(v.toLowerCase()));
+        if (nouvelles.length) {
+          await prisma.value.createMany({ data: nouvelles.map((label) => ({ userId, label })) });
+        }
+        return `Enregistré dans son profil : ${propres.join(", ")}. Dis-le-lui simplement ; elle peut les ajuster depuis « Profil ».`;
+      },
+    }),
+
+    definir_objectifs_annee: tool({
+      description:
+        "Enregistre les grands objectifs de l'année (trois au maximum). Remplace les précédents. À utiliser quand la personne énonce ce qu'elle veut accomplir cette année.",
+      inputSchema: z.object({
+        objectifs: z
+          .array(z.object({ intitule: z.string(), pourquoi: z.string() }))
+          .describe("Jusqu'à trois objectifs, chacun avec la raison pour laquelle il compte"),
+      }),
+      execute: async ({ objectifs }) => {
+        const year = new Date().getFullYear();
+        const retenus = objectifs.slice(0, 3).filter((o) => o.intitule.trim());
+        if (!retenus.length) return "Aucun objectif exploitable.";
+        await prisma.annualGoal.deleteMany({ where: { userId, year } });
+        await prisma.annualGoal.createMany({
+          data: retenus.map((o, i) => ({
+            userId,
+            year,
+            label: o.intitule.trim(),
+            why: o.pourquoi?.trim() || null,
+            order: i,
+          })),
+        });
+        return `Les ${retenus.length} objectifs de ${year} sont posés. Ils apparaissent sur « Aujourd'hui ».`;
+      },
+    }),
+
+    creer_projet: tool({
+      description:
+        "Crée un projet dans son espace. À utiliser quand elle décrit une intention structurée qui n'existe pas encore chez elle (vérifie avec lire_espace avant).",
+      inputSchema: z.object({
+        nom: z.string().describe("Nom court et clair du projet"),
+        vision: z.string().describe("Ce à quoi ça ressemble une fois réussi, ou chaîne vide"),
+        objectif: z.string().describe("Le résultat visé, ou chaîne vide"),
+        statut: z
+          .string()
+          .describe("actif, secondaire, attente ou idée — « actif » seulement si elle y travaille maintenant"),
+      }),
+      execute: async ({ nom, vision, objectif, statut }) => {
+        const titre = nom.trim();
+        if (titre.length < 2) return "Nom de projet trop court.";
+        if (await trouverProjet(userId, titre)) {
+          return `Un projet « ${titre} » existe déjà : propose plutôt de le préciser.`;
+        }
+        const actifs = await prisma.project.count({
+          where: { userId, deletedAt: null, status: "ACTIVE" },
+        });
+        const voulu = STATUTS[statut.trim().toLowerCase()] ?? "IDEA";
+        // La règle des trois projets actifs est structurante : on ne la force pas.
+        const retenu: ProjectStatus = voulu === "ACTIVE" && actifs >= 3 ? "SECONDARY" : voulu;
+        const dernier = await prisma.project.findFirst({
+          where: { userId, deletedAt: null },
+          orderBy: { order: "desc" },
+          select: { order: true },
+        });
+        await prisma.project.create({
+          data: {
+            userId,
+            name: titre,
+            vision: vision.trim() || null,
+            objective: objectif.trim() || null,
+            status: retenu,
+            order: (dernier?.order ?? 0) + 1,
+          },
+        });
+        return retenu === voulu
+          ? `Projet « ${titre} » créé (${retenu}). Visible dans « Projets ».`
+          : `Projet « ${titre} » créé en secondaire : elle a déjà trois projets actifs, c'est le maximum. Dis-le-lui et propose d'arbitrer.`;
+      },
+    }),
+
+    modifier_projet: tool({
+      description:
+        "Précise ou fait évoluer un projet existant : vision, objectif, statut. Laisse vide ce qui ne change pas.",
+      inputSchema: z.object({
+        nom: z.string().describe("Nom du projet à modifier, tel qu'elle l'appelle"),
+        vision: z.string().describe("Nouvelle vision, ou chaîne vide"),
+        objectif: z.string().describe("Nouvel objectif, ou chaîne vide"),
+        statut: z.string().describe("actif, secondaire, attente, idée, archivé — ou chaîne vide"),
+      }),
+      execute: async ({ nom, vision, objectif, statut }) => {
+        const projet = await trouverProjet(userId, nom);
+        if (!projet) return `Aucun projet « ${nom} » chez elle. Appelle lire_espace pour vérifier les noms.`;
+        const data: { vision?: string; objective?: string; status?: ProjectStatus } = {};
+        if (vision.trim()) data.vision = vision.trim();
+        if (objectif.trim()) data.objective = objectif.trim();
+        const s = STATUTS[statut.trim().toLowerCase()];
+        if (s) data.status = s;
+        if (!Object.keys(data).length) return "Rien à modifier.";
+        await prisma.project.update({ where: { id: projet.id }, data });
+        return `« ${projet.name} » mis à jour.`;
+      },
+    }),
+
+    definir_cap: tool({
+      description:
+        "Pose le cap du trimestre pour un projet : un objectif et ses résultats clés mesurables. À utiliser quand un projet actif n'a pas de cap, ou quand elle veut le revoir.",
+      inputSchema: z.object({
+        projet: z.string().describe("Nom du projet"),
+        objectif: z.string().describe("L'objectif du trimestre, en une phrase"),
+        resultats: z
+          .array(z.object({ intitule: z.string(), cible: z.string() }))
+          .describe("Deux à quatre résultats clés mesurables, avec leur cible (ex. « 12 entretiens »)"),
+      }),
+      execute: async ({ projet, objectif, resultats }) => {
+        const p = await trouverProjet(userId, projet);
+        if (!p) return `Aucun projet « ${projet} » chez elle.`;
+        const retenus = resultats.slice(0, 4).filter((r) => r.intitule.trim());
+        if (!objectif.trim() || !retenus.length) return "Il faut un objectif et au moins un résultat clé.";
+        const period = trimestre();
+        const okr = await prisma.okr.upsert({
+          where: { projectId_period: { projectId: p.id, period } },
+          create: { projectId: p.id, period, objective: objectif.trim() },
+          update: { objective: objectif.trim() },
+        });
+        await prisma.keyResult.deleteMany({ where: { okrId: okr.id } });
+        await prisma.keyResult.createMany({
+          data: retenus.map((r, i) => ({
+            okrId: okr.id,
+            label: r.intitule.trim(),
+            target: r.cible?.trim() || null,
+            order: i,
+          })),
+        });
+        return `Cap du ${period} posé pour « ${p.name} » : ${retenus.length} résultats clés. Elle les pointe chaque semaine depuis « Projets ».`;
+      },
+    }),
+  };
+}
