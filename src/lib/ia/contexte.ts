@@ -108,7 +108,7 @@ export async function nomDuSujet(userId: string, sujet: Sujet): Promise<string |
 
 /** Le bloc de contexte injecté dans la conversation, borné et compact. */
 export async function contexteCompact(userId: string, sujet: Sujet): Promise<string> {
-  const [profile, projets, taches] = await Promise.all([
+  const [profile, projets, taches, valeurs, objectifs, echanges] = await Promise.all([
     prisma.profile.findUnique({ where: { userId } }),
     prisma.project.findMany({
       where: { userId, deletedAt: null, status: { in: ["ACTIVE", "SECONDARY"] } },
@@ -121,6 +121,24 @@ export async function contexteCompact(userId: string, sujet: Sujet): Promise<str
       orderBy: { createdAt: "asc" },
       take: 5,
       select: { id: true, title: true, createdAt: true },
+    }),
+    prisma.value.findMany({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
+      select: { label: true },
+    }),
+    prisma.annualGoal.findMany({
+      where: { userId, year: new Date().getFullYear() },
+      orderBy: { order: "asc" },
+      select: { label: true, why: true },
+    }),
+    // La mémoire des échanges : sans elle, chaque conversation repart de zéro
+    // et redemande ce qui a déjà été dit ailleurs.
+    prisma.conversation.findMany({
+      where: { userId },
+      orderBy: { updatedAt: "desc" },
+      take: 8,
+      select: { title: true, updatedAt: true, project: { select: { name: true } } },
     }),
   ]);
 
@@ -137,6 +155,18 @@ export async function contexteCompact(userId: string, sujet: Sujet): Promise<str
     );
   }
   if (profile?.vision) l.push(`Sa vision : ${profile.vision}`);
+  if (valeurs.length) {
+    l.push(
+      `Ses valeurs, déjà enregistrées : ${valeurs.map((v) => v.label).join(", ")}. Elles sont posées — ne les redemande pas, appuie-toi dessus.`,
+    );
+  }
+  if (objectifs.length) {
+    l.push(
+      `Ses objectifs pour ${new Date().getFullYear()} :\n${objectifs
+        .map((o) => `- ${o.label}${o.why ? ` (parce que : ${o.why})` : ""}`)
+        .join("\n")}`,
+    );
+  }
   if (profile?.domaines?.length) l.push(`Ses domaines : ${profile.domaines.join(", ")}`);
   if (profile?.style) l.push(`Accompagnement souhaité : ${profile.style}`);
 
@@ -160,6 +190,20 @@ export async function contexteCompact(userId: string, sujet: Sujet): Promise<str
     );
   }
 
+  // Les échanges précédents : une conversation n'est pas une île.
+  if (echanges.length > 1) {
+    const quand = (d: Date) => {
+      const j = jours(d);
+      return j === 0 ? "aujourd'hui" : j === 1 ? "hier" : `il y a ${j} jours`;
+    };
+    l.push(
+      `Vos échanges précédents (n'y reviens pas si ce n'est pas utile, mais sache qu'ils ont eu lieu) :\n${echanges
+        .slice(1)
+        .map((c) => `- « ${c.title} »${c.project ? ` — projet ${c.project.name}` : ""}, ${quand(c.updatedAt)}`)
+        .join("\n")}`,
+    );
+  }
+
   // Le cadrage propre à la porte empruntée.
   if (sujet.type === "projet") {
     const p = projets.find((x) => x.id === sujet.id);
@@ -177,8 +221,21 @@ export async function contexteCompact(userId: string, sujet: Sujet): Promise<str
       }. Trois issues possibles : la réduire à dix minutes, la dater, ou reconnaître qu'elle n'est plus prioritaire. Propose ces trois portes, laisse-la choisir. Cinq messages maximum.`,
     );
   } else if (sujet.type === "etape") {
+    // Une étape déjà travaillée ne se reprend pas de zéro : on l'affine.
+    const cle = sujet.cle.toLowerCase();
+    const dejaFait = cle.includes("valeur")
+      ? valeurs.length
+        ? `Elle a déjà posé ${valeurs.length} valeur(s) : ${valeurs.map((v) => v.label).join(", ")}. Pars de là — complète ou affine, ne recommence pas.`
+        : ""
+      : cle.includes("objectif")
+        ? objectifs.length
+          ? `Ses objectifs de l'année sont déjà posés : ${objectifs.map((o) => o.label).join(", ")}. Pars de là.`
+          : ""
+        : "";
     l.push(
-      `\n⚠ Cet échange porte sur l'étape « ${sujet.cle} » de son chemin. Aide-la à la formuler avec ses mots — tu peux proposer des exemples, jamais choisir à sa place.`,
+      `\n⚠ Cet échange porte sur l'étape « ${sujet.cle} » de son chemin. Aide-la à la formuler avec ses mots — tu peux proposer des exemples, jamais choisir à sa place.${
+        dejaFait ? ` ${dejaFait}` : ""
+      }`,
     );
   } else if (sujet.type === "bilan") {
     l.push(

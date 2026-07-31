@@ -15,6 +15,8 @@ type Etape = {
   titre: string;
   etat: Etat;
   type?: "depart" | "destination";
+  /** La porte vers la conversation : un projet précis, ou l'étape elle-même. */
+  projetId?: string;
   detail?: { label: string; vision?: string; objectif?: string; action?: string; date?: string };
 };
 
@@ -37,7 +39,7 @@ const UNIVERS: Univers[] = [
     etapes: [
       { titre: "Ton histoire", etat: "fait", type: "depart", detail: { label: "Fondation", vision: "Ta synthèse d'accueil : qui tu es, ce que tu portes." } },
       { titre: "Ta vision", etat: "fait", detail: { label: "Fondation", vision: "Là où tu veux aller." } },
-      { titre: "Tes valeurs", etat: "actuel", detail: { label: "En cours", objectif: "Choisir tes 3 valeurs cardinales.", action: "En parler avec AMANA", date: "cette semaine" } },
+      { titre: "Tes valeurs", etat: "actuel", detail: { label: "En cours", objectif: "Choisir tes 3 valeurs cardinales.", action: "En parler", date: "cette semaine" } },
       { titre: "Ta mission", etat: "avenir", detail: { label: "À venir", objectif: "Formuler ta mission personnelle en une phrase." } },
       { titre: "Clarté", etat: "avenir", type: "destination", detail: { label: "Destination", vision: "Une vue d'ensemble apaisée de ce qui t'est confié." } },
     ],
@@ -75,11 +77,26 @@ const SCENES = { desert: DesertScene, forest: ForestScene, ocean: OceanScene } a
 function universVivants(data: CheminData): Univers[] {
   const base = structuredClone(UNIVERS);
 
-  // La Source suit le profil.
+  // La Source suit le profil : vision, puis valeurs réellement enregistrées.
   const src = base[0].etapes;
   src[1].etat = data.vision ? "fait" : "actuel";
   if (data.vision) src[1].detail = { label: "Fondation", vision: data.vision };
-  src[2].etat = data.vision ? "actuel" : "avenir";
+
+  const nb = data.values.length;
+  if (nb) {
+    // Ce qu'elle a confié doit se voir ici, sinon l'enregistrement ne veut rien dire.
+    src[2].etat = nb >= 3 ? "fait" : "actuel";
+    src[2].detail = {
+      label: nb >= 3 ? "Fondation" : "En cours",
+      vision: data.values.join(" · "),
+      objectif:
+        nb >= 3 ? undefined : `${nb} valeur${nb > 1 ? "s" : ""} posée${nb > 1 ? "s" : ""} sur 3.`,
+      action: nb >= 3 ? undefined : "En parler",
+    };
+    src[3].etat = nb >= 3 ? "actuel" : "avenir";
+  } else {
+    src[2].etat = data.vision ? "actuel" : "avenir";
+  }
 
   // Build suit les projets réels, ordonnés : actifs, puis secondaires, puis idées.
   const rang = { ACTIVE: 0, SECONDARY: 1, WAITING: 2, IDEA: 3, ARCHIVED: 4 } as const;
@@ -109,6 +126,7 @@ function universVivants(data: CheminData): Univers[] {
       },
       ...projets.map((p, i) => ({
         titre: p.name,
+        projetId: p.id,
         etat: (p.status === "ACTIVE" && i === 0 ? "actuel" : "avenir") as Etat,
         detail: {
           label: `${libelle[p.status as keyof typeof libelle] ?? "Projet"}${p.progress ? ` · ${p.progress} %` : ""}`,
@@ -121,6 +139,12 @@ function universVivants(data: CheminData): Univers[] {
       base[1].etapes[base[1].etapes.length - 1],
     ];
     base[1].etapes = etapes;
+  }
+
+  // La destination de Build, ce sont ses objectifs de l'année — pas une phrase générique.
+  if (data.objectifsAnnee.length) {
+    const fin = base[1].etapes[base[1].etapes.length - 1];
+    fin.detail = { label: "Destination", vision: data.objectifsAnnee.join(" · ") };
   }
   return base;
 }
@@ -375,7 +399,13 @@ export default function CheminPage() {
             )}
             <div className="mt-5 flex gap-3">
               <Link
-                href="/conversation"
+                href={
+                  // La conversation s'ouvre SUR le sujet : sans cela, l'IA
+                  // redemande ce que l'écran affichait déjà.
+                  zoom.projetId
+                    ? `/conversation?projet=${zoom.projetId}`
+                    : `/conversation?etape=${encodeURIComponent(zoom.titre)}`
+                }
                 className="press flex-1 rounded-full bg-ink px-5 py-3 text-center text-sm font-bold uppercase tracking-widest text-paper"
               >
                 En parler

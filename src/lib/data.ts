@@ -84,7 +84,7 @@ export async function getDashboard(userId: string) {
   } else {
     nudge = {
       texte: "Commence par la première. Le reste suivra plus facilement.",
-      cta: "En parler à AMANA",
+      cta: "En parler",
       href: "/conversation",
     };
   }
