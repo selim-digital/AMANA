@@ -10,6 +10,11 @@ import { contexteCompact, sujetDepuisParams } from "@/lib/ia/contexte";
 export const maxDuration = 120;
 
 type Msg = { role: "user" | "assistant"; content: string };
+type Fichier = { nom: string; type: string; donnees: string };
+
+/** Types acceptés tels quels par le modèle. Le reste est lu comme du texte
+ *  côté client, ou refusé avec un message clair. */
+const NATIF = (t: string) => t.startsWith("image/") || t === "application/pdf";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -24,6 +29,7 @@ export async function POST(req: Request) {
     mode?: string;
   };
   const { messages } = body;
+  const fichiers = (body as { fichiers?: Fichier[] }).fichiers ?? [];
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return new Response(
@@ -66,7 +72,26 @@ export async function POST(req: Request) {
     messages: [
       blocPosture(),
       ...(contexte ? [{ role: "system" as const, content: contexte }] : []),
-      ...messages,
+      // Les pièces jointes accompagnent le dernier message de la personne.
+      ...(fichiers.length
+        ? [
+            ...messages.slice(0, -1),
+            {
+              role: "user" as const,
+              content: [
+                { type: "text" as const, text: dernier?.content ?? "" },
+                ...fichiers
+                  .filter((f) => NATIF(f.type))
+                  .map((f) => ({
+                    type: "file" as const,
+                    data: f.donnees,
+                    mediaType: f.type,
+                    filename: f.nom,
+                  })),
+              ],
+            },
+          ]
+        : messages),
     ],
     stopWhen: stepCountIs(6),
     // Purge les résultats de recherche web des pas suivants (poste de coût n°1).

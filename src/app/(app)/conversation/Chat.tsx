@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { creerActionDepuisChat } from "@/lib/actions";
+import { preparerFichier, type PieceJointe } from "@/lib/fichiers";
 
 type Msg = { role: "user" | "assistant"; content: string };
 type Historique = { id: string; title: string; projet: string | null; nb: number; date: string };
@@ -41,6 +42,10 @@ export function Chat({
   const [busy, setBusy] = useState(false);
   const [voirHistorique, setVoirHistorique] = useState(false);
   const [ajoutee, setAjoutee] = useState<string | null>(null);
+  const [pieces, setPieces] = useState<PieceJointe[]>([]);
+  const [texteJoint, setTexteJoint] = useState("");
+  const [refus, setRefus] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [, start] = useTransition();
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -51,7 +56,7 @@ export function Chat({
   async function send(text: string) {
     const content = text.trim();
     if (!content || busy) return;
-    const next: Msg[] = [...messages, { role: "user", content }];
+    const next: Msg[] = [...messages, { role: "user", content: content + texteJoint }];
     setMessages(next);
     setInput("");
     setBusy(true);
@@ -59,7 +64,7 @@ export function Chat({
       const res = await fetch("/api/conversation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next, conversationId: convId, ...sujet }),
+        body: JSON.stringify({ messages: next, conversationId: convId, fichiers: pieces, ...sujet }),
       });
       if (!res.ok || !res.body) throw new Error("réseau");
 
@@ -88,7 +93,29 @@ export function Chat({
       setInput(content);
     } finally {
       setBusy(false);
+      setPieces([]);
+      setTexteJoint("");
     }
+  }
+
+  /** Prépare les fichiers choisis : images et PDF transmis tels quels,
+   *  texte intégré au message, le reste refusé avec une explication. */
+  async function joindre(liste: FileList | null) {
+    if (!liste) return;
+    setRefus(null);
+    for (const f of Array.from(liste)) {
+      const r = await preparerFichier(f);
+      if (!r.ok) {
+        setRefus(r.raison);
+        continue;
+      }
+      if (r.piece) setPieces((ps) => [...ps, r.piece!]);
+      if (r.texte) {
+        setTexteJoint((t) => t + r.texte!);
+        setPieces((ps) => [...ps, { nom: f.name, type: "text/plain", donnees: "" }]);
+      }
+    }
+    if (fileRef.current) fileRef.current.value = "";
   }
 
   const derniere = messages[messages.length - 1];
@@ -230,6 +257,30 @@ export function Chat({
         <div ref={endRef} />
       </div>
 
+      {/* Ce qui est joint, et pourquoi un fichier a été refusé. */}
+      {(pieces.length > 0 || refus) && (
+        <div className="step-enter flex flex-col gap-2 border-t border-ink/10 px-4 pt-3">
+          {pieces.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {pieces.map((f, n) => (
+                <span key={n} className="flex items-center gap-2 rounded-full bg-surface-2 px-3 py-1.5 text-xs">
+                  {f.nom}
+                  <button
+                    type="button"
+                    onClick={() => setPieces((ps) => ps.filter((_, k) => k !== n))}
+                    aria-label={`Retirer ${f.nom}`}
+                    className="text-ink-faint"
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          {refus && <p className="text-xs text-[#B8543F]">{refus}</p>}
+        </div>
+      )}
+
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -237,6 +288,24 @@ export function Chat({
         }}
         className="flex gap-2 border-t border-ink/10 px-4 py-3"
       >
+        <input
+          ref={fileRef}
+          type="file"
+          multiple
+          hidden
+          onChange={(e) => joindre(e.target.files)}
+          accept="image/*,application/pdf,text/*,.md,.csv,.json,.yml,.yaml,.log"
+        />
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          aria-label="Joindre un fichier"
+          className="press flex h-11 w-11 flex-none items-center justify-center rounded-full border border-ink/15 text-ink-soft"
+        >
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l8.49-8.49a3.67 3.67 0 1 1 5.18 5.18l-8.49 8.49a1.83 1.83 0 1 1-2.6-2.6l7.79-7.78" />
+          </svg>
+        </button>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
