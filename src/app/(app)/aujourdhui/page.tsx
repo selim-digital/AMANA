@@ -132,7 +132,7 @@ export default async function DashboardPage() {
             {[
               { href: "/deposer", label: "Déposer", d: "M12 4v10m0 0-4-4m4 4 4-4M5 18h14" },
               { href: "/conversation", label: "En parler", d: "M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8Z" },
-              { href: "/projets", label: "Projets", d: "M4 20V6.5A2.5 2.5 0 0 1 6.5 4H20M7.5 16.5 12 12l4.5-4.5" },
+              { href: "/deepdive", label: "Plongée", d: "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 4.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z" },
             ].map((a) => (
               <a
                 key={a.href}

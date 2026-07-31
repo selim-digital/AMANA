@@ -288,6 +288,52 @@ export async function reorderProjects(ids: string[]) {
   revalidatePath("/chemin");
 }
 
+// ─────────────────────────── DeepDive ───────────────────────────
+
+/** Le verdict de la personne sur une hypothèse : elle seule tranche. */
+export async function rendreVerdict(
+  signalId: string,
+  verdict: "VALIDE" | "NUANCE" | "INVALIDE",
+  verbatim?: string,
+) {
+  const userId = await requireUserId();
+  const signal = await prisma.signal.findFirst({
+    where: { id: signalId, session: { userId } },
+  });
+  if (!signal) return;
+
+  await prisma.signal.update({
+    where: { id: signalId },
+    data: { verdict, verbatim: verbatim?.trim() || null },
+  });
+  await logEvent(userId, "deepdive_verdict", { verdict, niveau: signal.niveau });
+  revalidatePath("/deepdive");
+}
+
+/** Descendre d'un niveau : on change de terrain, pas d'intensité. */
+export async function descendreNiveau(sessionId: string) {
+  const userId = await requireUserId();
+  const s = await prisma.deepDiveSession.findFirst({ where: { id: sessionId, userId } });
+  if (!s || s.niveau >= 4) return;
+
+  await prisma.deepDiveSession.update({
+    where: { id: sessionId },
+    data: { niveau: s.niveau + 1 },
+  });
+  revalidatePath("/deepdive");
+}
+
+/** Clore la plongée — l'analyse s'arrête à la porte de l'intériorité. */
+export async function cloturerPlongee(sessionId: string) {
+  const userId = await requireUserId();
+  await prisma.deepDiveSession.updateMany({
+    where: { id: sessionId, userId },
+    data: { status: "close", closedAt: new Date() },
+  });
+  await logEvent(userId, "deepdive_close", {});
+  revalidatePath("/deepdive");
+}
+
 // ─────────────────────────── Notifications ───────────────────────────
 
 export async function marquerNotificationLue(id: string) {
