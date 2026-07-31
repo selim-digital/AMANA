@@ -69,7 +69,8 @@ export function Chat({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: next, conversationId: convId, fichiers: pieces, ...sujet }),
       });
-      if (!res.ok || !res.body) throw new Error("réseau");
+      if (!res.ok) throw new Error((await res.text()).slice(0, 300) || "réponse en erreur");
+      if (!res.body) throw new Error("réponse vide");
 
       const id = res.headers.get("X-Conversation-Id");
       if (id && id !== convId) setConvId(id);
@@ -85,12 +86,29 @@ export function Chat({
         const current = acc;
         setMessages((m) => [...m.slice(0, -1), { role: "assistant", content: current }]);
       }
-    } catch {
+      // Flux ouvert mais vide : le modèle a échoué en cours de route. Sans cela,
+      // la personne reste devant une bulle blanche sans comprendre.
+      if (!acc.trim()) {
+        setMessages((m) => [
+          ...m.slice(0, -1),
+          {
+            role: "assistant",
+            content:
+              "Je n'ai pas réussi à formuler ma réponse. Reformule en une phrase, ou réessaie dans un instant.",
+          },
+        ]);
+        setInput(content);
+      }
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : "";
       setMessages((m) => [
         ...m,
         {
           role: "assistant",
-          content: "La connexion a échoué — ton message est conservé, tu peux réessayer.",
+          content:
+            "Je n'ai pas pu répondre." +
+            (detail ? `\n\n${detail}` : "") +
+            "\n\nTon message est conservé, tu peux réessayer.",
         },
       ]);
       setInput(content);

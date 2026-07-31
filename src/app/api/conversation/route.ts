@@ -4,7 +4,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ficheOutil } from "@/lib/coaching/outils";
-import { COACH, blocPosture, PURGE_OUTILS } from "@/lib/ia/noyau";
+import { COACH, SYSTEME_COACH } from "@/lib/ia/noyau";
 import { contexteCompact, sujetDepuisParams } from "@/lib/ia/contexte";
 
 export const maxDuration = 120;
@@ -67,11 +67,11 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: COACH,
-    // Le bloc de posture est figé et mis en cache ; le contexte variable vient
-    // après le point de cache, dans un message distinct.
+    // Posture et contexte passent par le paramètre `system` : forme simple et
+    // éprouvée. (La mise en cache par messages système était une optimisation
+    // prématurée — elle cassait le flux.)
+    system: contexte ? `${SYSTEME_COACH}\n\n${contexte}` : SYSTEME_COACH,
     messages: [
-      blocPosture(),
-      ...(contexte ? [{ role: "system" as const, content: contexte }] : []),
       // Les pièces jointes accompagnent le dernier message de la personne.
       ...(fichiers.length
         ? [
@@ -96,8 +96,6 @@ export async function POST(req: Request) {
     // Trois pas suffisent : consulter au plus un outil, puis répondre. Au-delà,
     // la personne attend devant un écran muet.
     stopWhen: stepCountIs(3),
-    // Purge les résultats de recherche web des pas suivants (poste de coût n°1).
-    providerOptions: PURGE_OUTILS,
     tools: {
       consulter_outil: tool({
         description:
@@ -121,8 +119,16 @@ export async function POST(req: Request) {
             echeance ? ` — ${echeance}` : ""
           }. Dis-lui qu'elle peut la valider juste en dessous.`,
       }),
-      web_search: anthropic.tools.webSearch_20260209({ maxUses: 1 }),
-      web_fetch: anthropic.tools.webFetch_20260209({ maxUses: 1 }),
+      // La recherche web n'est branchée que si elle est explicitement activée
+      // (RECHERCHE_WEB=1). Si le compte Anthropic ne la prend pas en charge,
+      // la déclarer suffit à casser tout le flux : le chat doit marcher sans.
+      ...(process.env.RECHERCHE_WEB === "1"
+        ? { web_search: anthropic.tools.webSearch_20260209({ maxUses: 1 }) }
+        : {}),
+    },
+    // Sans cela, une erreur du modèle casse le flux sans laisser de trace.
+    onError: ({ error }) => {
+      console.error("[conversation] échec du flux :", error);
     },
     onFinish: async ({ text }) => {
       if (userId && convId && text) {
@@ -136,7 +142,31 @@ export async function POST(req: Request) {
     },
   });
 
-  const res = result.toTextStreamResponse();
+  // On tient le flux nous-mêmes : `toTextStreamResponse` avale les erreurs du
+  // modèle et laisse la personne devant une bulle vide. Ici, ce qui casse est
+  // écrit dans la réponse — visible, donc corrigeable.
+  const flux = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const encodeur = new TextEncoder();
+      try {
+        for await (const morceau of result.textStream) {
+          controller.enqueue(encodeur.encode(morceau));
+        }
+      } catch (e) {
+        const detail = e instanceof Error ? `${e.name} : ${e.message}` : String(e);
+        console.error("[conversation] échec du flux :", e);
+        controller.enqueue(
+          encodeur.encode(`\n\n⚠️ L'appel au modèle a échoué.\n${detail}`),
+        );
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  const res = new Response(flux, {
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
   if (convId) res.headers.set("X-Conversation-Id", convId);
   return res;
 }
