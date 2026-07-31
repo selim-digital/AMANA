@@ -1,11 +1,18 @@
 import { auth } from "@/auth";
 import { getProfile } from "@/lib/data";
+import { prisma } from "@/lib/prisma";
 import { AccountActions } from "./AccountActions";
+import { Valeurs } from "./Valeurs";
 
 export default async function ProfilPage() {
   const session = await auth();
   const user = session!.user;
   const profile = await getProfile(user.id);
+  const valeurs = await prisma.value.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, label: true },
+  });
   const prenom = user.name?.trim().split(" ")[0] || "toi";
 
   return (
@@ -37,6 +44,8 @@ export default async function ProfilPage() {
             : "Ta vision se précisera à ton rythme, au fil des échanges."}
         </p>
       </section>
+
+      <Valeurs valeurs={valeurs} />
 
       <section className="rounded-[22px] bg-surface p-5">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
