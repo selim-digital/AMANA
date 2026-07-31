@@ -14,9 +14,14 @@ export async function getProfile(userId: string) {
 
 /** Données du tableau de bord : priorités du jour + projets actifs + indices. */
 export async function getDashboard(userId: string) {
-  const [user, profile, tasks, projects, activeCount, openCount, doneCount] = await Promise.all([
+  const [user, profile, objectifsAnnee, tasks, projects, activeCount, openCount, doneCount] =
+    await Promise.all([
     prisma.user.findUnique({ where: { id: userId } }),
     prisma.profile.findUnique({ where: { userId } }),
+    prisma.annualGoal.findMany({
+      where: { userId, year: new Date().getFullYear() },
+      orderBy: { order: "asc" },
+    }),
     // Les actions faites AUJOURD'HUI restent affichées : on doit pouvoir
     // revenir sur un clic accidentel, et voir ce qu'on a accompli.
     prisma.task.findMany({
@@ -89,6 +94,7 @@ export async function getDashboard(userId: string) {
     tasks,
     projects,
     activeCount,
+    objectifsAnnee,
     indices: { clarte, action, alignement },
     nudge,
   };
