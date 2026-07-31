@@ -17,10 +17,19 @@ export async function getDashboard(userId: string) {
   const [user, profile, tasks, projects, activeCount, openCount, doneCount] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId } }),
     prisma.profile.findUnique({ where: { userId } }),
+    // Les actions faites AUJOURD'HUI restent affichées : on doit pouvoir
+    // revenir sur un clic accidentel, et voir ce qu'on a accompli.
     prisma.task.findMany({
-      where: { userId, deletedAt: null, status: { notIn: ["DONE"] } },
-      orderBy: [{ priority: "asc" }, { createdAt: "asc" }],
-      take: 3,
+      where: {
+        userId,
+        deletedAt: null,
+        OR: [
+          { status: { notIn: ["DONE"] } },
+          { status: "DONE", updatedAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
+        ],
+      },
+      orderBy: [{ status: "asc" }, { priority: "asc" }, { createdAt: "asc" }],
+      take: 6,
     }),
     prisma.project.findMany({
       where: { userId, deletedAt: null, status: "ACTIVE" },
@@ -91,6 +100,11 @@ export async function getProjectsByStatus(userId: string) {
   return prisma.project.findMany({
     where: { userId, deletedAt: null },
     orderBy: [{ order: "asc" }, { updatedAt: "desc" }],
+    include: {
+      // Les échanges passés doivent être retrouvables depuis le projet lui-même.
+      conversations: { orderBy: { updatedAt: "desc" }, take: 1, select: { id: true } },
+      _count: { select: { conversations: true } },
+    },
   });
 }
 

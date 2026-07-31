@@ -18,14 +18,17 @@ export function PriorityList({ items }: { items: Priority[] }) {
   const [celebre, setCelebre] = useState<string | null>(null);
   const router = useRouter();
 
-  function toggle(id: string, done: boolean) {
-    if (!done) setCelebre(id); // le geste est confirmé avant même le serveur
+  function basculer(id: string, done: boolean) {
+    if (!done) setCelebre(id);
     start(async () => {
       await toggleTask(id);
       router.refresh();
       setTimeout(() => setCelebre(null), 600);
     });
   }
+
+  const restantes = items.filter((i) => !i.done);
+  const faites = items.filter((i) => i.done);
 
   if (items.length === 0) {
     return (
@@ -44,63 +47,78 @@ export function PriorityList({ items }: { items: Priority[] }) {
     );
   }
 
-  const [essentielle, ...secondaires] = items;
+  const [essentielle, ...suivantes] = restantes;
 
   return (
     <section className="flex flex-col gap-3" aria-label="Ce qui compte aujourd'hui">
-      {/* La priorité essentielle : grande, dorée, avec une invitation claire. */}
-      <button
-        onClick={() => toggle(essentielle.id, essentielle.done)}
-        disabled={pending}
-        className={`press group relative overflow-hidden rounded-[22px] bg-gold-soft p-5 text-left transition-opacity ${
-          essentielle.done ? "opacity-55" : ""
-        }`}
-      >
-        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold-deep">
-          L&apos;essentiel du jour
-        </span>
-
-        <span className="mt-2 flex items-start gap-3">
-          <Case done={essentielle.done} celebre={celebre === essentielle.id} accent />
-          <span
-            className={`flex-1 text-[17px] font-semibold leading-snug lg:text-xl ${
-              essentielle.done ? "line-through" : ""
-            }`}
-          >
-            {essentielle.title}
+      {essentielle && (
+        <button
+          onClick={() => basculer(essentielle.id, false)}
+          disabled={pending}
+          className="press relative overflow-hidden rounded-[22px] bg-gold-soft p-5 text-left"
+        >
+          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold-deep">
+            L&apos;essentiel du jour
           </span>
-        </span>
-
-        {!essentielle.done && (
+          <span className="mt-2 flex items-start gap-3">
+            <Case done={false} celebre={celebre === essentielle.id} accent />
+            <span className="flex-1 text-[17px] font-semibold leading-snug lg:text-xl">
+              {essentielle.title}
+            </span>
+          </span>
           <span className="mt-3 flex items-center gap-2 text-xs text-gold-deep">
             <span className="nudge inline-block h-1.5 w-1.5 rounded-full bg-gold-deep" />
             Touche pour la marquer faite
           </span>
-        )}
-      </button>
+        </button>
+      )}
 
-      {secondaires.length > 0 && (
+      {suivantes.length > 0 && (
         <div className="flex flex-col gap-2">
           <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             Ensuite
           </span>
-          {secondaires.map((p) => (
+          {suivantes.map((p) => (
             <button
               key={p.id}
-              onClick={() => toggle(p.id, p.done)}
+              onClick={() => basculer(p.id, false)}
               disabled={pending}
-              className={`press flex items-center gap-3 rounded-[16px] bg-surface-2 px-4 py-3.5 text-left text-sm ${
-                p.done ? "opacity-55" : ""
-              }`}
+              className="press flex items-center gap-3 rounded-[16px] bg-surface-2 px-4 py-3.5 text-left text-sm"
             >
-              <Case done={p.done} celebre={celebre === p.id} />
-              <span className={`flex-1 ${p.done ? "line-through" : ""}`}>{p.title}</span>
+              <Case done={false} celebre={celebre === p.id} />
+              <span className="flex-1">{p.title}</span>
               {LIBELLE[p.kind] && (
                 <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] uppercase tracking-wider text-ink-faint">
                   {LIBELLE[p.kind]}
                 </span>
               )}
             </button>
+          ))}
+        </div>
+      )}
+
+      {/* Ce qui est fait reste visible aujourd'hui : on peut toujours revenir
+          sur un clic accidentel, et on voit ce qu'on a accompli. */}
+      {faites.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+            Fait aujourd&apos;hui · {faites.length}
+          </span>
+          {faites.map((p) => (
+            <div
+              key={p.id}
+              className="flex items-center gap-3 rounded-[16px] bg-surface-2/60 px-4 py-3 text-sm"
+            >
+              <Case done celebre={celebre === p.id} />
+              <span className="flex-1 text-ink-faint line-through">{p.title}</span>
+              <button
+                onClick={() => basculer(p.id, true)}
+                disabled={pending}
+                className="press rounded-full border border-ink/15 px-3 py-1 text-[11px] font-semibold text-ink-soft"
+              >
+                Annuler
+              </button>
+            </div>
           ))}
         </div>
       )}
