@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { ficheOutil } from "@/lib/coaching/outils";
 import { COACH, SYSTEME_COACH } from "@/lib/ia/noyau";
 import { contexteCompact, sujetDepuisParams } from "@/lib/ia/contexte";
+import { outilsEspace } from "@/lib/ia/outils-espace";
 
 export const maxDuration = 120;
 
@@ -93,9 +94,9 @@ export async function POST(req: Request) {
           ]
         : messages),
     ],
-    // Trois pas suffisent : consulter au plus un outil, puis répondre. Au-delà,
-    // la personne attend devant un écran muet.
-    stopWhen: stepCountIs(3),
+    // Assez de pas pour lire son espace, y inscrire ce qu'elle confie, puis
+    // répondre — sans jamais la laisser attendre devant un écran muet.
+    stopWhen: stepCountIs(6),
     tools: {
       consulter_outil: tool({
         description:
@@ -119,6 +120,9 @@ export async function POST(req: Request) {
             echeance ? ` — ${echeance}` : ""
           }. Dis-lui qu'elle peut la valider juste en dessous.`,
       }),
+      // Les mains du chat sur son espace : lire, noter ses valeurs, créer et
+      // préciser ses projets, poser ses objectifs et le cap du trimestre.
+      ...(userId ? outilsEspace(userId) : {}),
       // La recherche web n'est branchée que si elle est explicitement activée
       // (RECHERCHE_WEB=1). Si le compte Anthropic ne la prend pas en charge,
       // la déclarer suffit à casser tout le flux : le chat doit marcher sans.
