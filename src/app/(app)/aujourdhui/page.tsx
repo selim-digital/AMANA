@@ -6,13 +6,14 @@ import { PriorityList, type Priority } from "./PriorityList";
 import { MicroProfil } from "./MicroProfil";
 import { ModaleAction } from "./ModaleAction";
 import { ObjectifsAnnee } from "./ObjectifsAnnee";
+import { Notifications } from "./Notifications";
 import { questionsRestantes } from "@/lib/coaching/profils";
 
 /** SCR-DASH — « Aujourd'hui » : ce qui compte, et une seule invitation à agir. */
 export default async function DashboardPage() {
   const session = await auth();
   const userId = session!.user.id;
-  const { user, profile, tasks, projects, activeCount, objectifsAnnee, indices, nudge } =
+  const { user, profile, tasks, projects, activeCount, objectifsAnnee, notifications, indices, nudge } =
     await getDashboard(userId);
 
   // Une question de profil à la fois, au fil de l'eau — jamais une série.
@@ -88,6 +89,10 @@ export default async function DashboardPage() {
               « Qu&apos;est-ce qui, aujourd&apos;hui, mérite vraiment ton énergie ? »
             </p>
           </section>
+
+          {notifications.length > 0 && (
+            <Notifications notifs={notifications.map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href }))} />
+          )}
 
           <div className="enter" style={{ "--i": 3 } as React.CSSProperties}>
             <PriorityList items={priorities} />

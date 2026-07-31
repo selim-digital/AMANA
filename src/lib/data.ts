@@ -14,10 +14,11 @@ export async function getProfile(userId: string) {
 
 /** Données du tableau de bord : priorités du jour + projets actifs + indices. */
 export async function getDashboard(userId: string) {
-  const [user, profile, objectifsAnnee, tasks, projects, activeCount, openCount, doneCount] =
+  const [user, profile, notifications, objectifsAnnee, tasks, projects, activeCount, openCount, doneCount] =
     await Promise.all([
     prisma.user.findUnique({ where: { id: userId } }),
     prisma.profile.findUnique({ where: { userId } }),
+    prisma.notification.findMany({ where: { userId, readAt: null }, orderBy: { createdAt: "desc" }, take: 3 }),
     prisma.annualGoal.findMany({
       where: { userId, year: new Date().getFullYear() },
       orderBy: { order: "asc" },
@@ -95,6 +96,7 @@ export async function getDashboard(userId: string) {
     projects,
     activeCount,
     objectifsAnnee,
+    notifications,
     indices: { clarte, action, alignement },
     nudge,
   };

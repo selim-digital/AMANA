@@ -288,6 +288,24 @@ export async function reorderProjects(ids: string[]) {
   revalidatePath("/chemin");
 }
 
+// ─────────────────────────── Notifications ───────────────────────────
+
+export async function marquerNotificationLue(id: string) {
+  const userId = await requireUserId();
+  await prisma.notification.updateMany({
+    where: { id, userId },
+    data: { readAt: new Date() },
+  });
+  revalidatePath("/aujourdhui");
+}
+
+/** Couper ou rétablir les rappels par email. */
+export async function reglerNotificationsEmail(actif: boolean) {
+  const userId = await requireUserId();
+  await prisma.user.update({ where: { id: userId }, data: { notifyEmail: actif } });
+  revalidatePath("/profil");
+}
+
 // ─────────────────── Objectifs de l'année & OKR ───────────────────
 
 /** Le trimestre courant, au format « 2026-Q3 » (interne : ce fichier n'exporte
