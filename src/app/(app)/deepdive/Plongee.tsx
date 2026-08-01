@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { cloturerPlongee, descendreNiveau, rendreVerdict } from "@/lib/actions";
+import { Analyse, type Synthese } from "./Analyse";
 
 export type SignalVue = {
   id: string;
@@ -59,11 +60,15 @@ export function Plongee({
   niveau,
   signaux,
   close,
+  synthese,
+  tranchees,
 }: {
   sessionId: string | null;
   niveau: number;
   signaux: SignalVue[];
   close: boolean;
+  synthese: Synthese | null;
+  tranchees: number;
 }) {
   const router = useRouter();
   const [chargement, setChargement] = useState(false);
@@ -208,6 +213,16 @@ export function Plongee({
           </div>
         </section>
       ))}
+
+      {/* L'analyse finale : disponible dès qu'il y a de la matière, et pour
+          une plongée déjà close — la matière n'a pas bougé. */}
+      {sessionId && (close || tranchees >= 2) && (
+        <Analyse
+          sessionId={sessionId}
+          initiale={synthese}
+          assezDeMatiere={tranchees >= 2}
+        />
+      )}
 
       {/* Ce qui a été tranché */}
       {tranches.length > 0 && (
