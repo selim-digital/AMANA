@@ -13,17 +13,45 @@ export type SignalVue = {
   verbatim: string | null;
 };
 
+/**
+ * Les quatre terrains. À chaque descente on change de matière d'examen, pas
+ * d'intensité : c'est ce qui distingue une plongée d'un interrogatoire.
+ */
 const NIVEAUX = [
-  { n: 1, nom: "Les faits", quoi: "ce que tu as écrit" },
-  { n: 2, nom: "Les croisements", quoi: "les dates, les absences, les écarts" },
-  { n: 3, nom: "Tes artefacts", quoi: "ce que tu écris pour toi-même" },
-  { n: 4, nom: "Ta manière", quoi: "la forme de tes réponses" },
+  {
+    n: 1,
+    nom: "Les faits",
+    quoi: "ce que tu as écrit",
+    contexte:
+      "On part de ce qui est noté noir sur blanc dans ton espace : ta vision, tes projets, leurs objectifs, tes actions. On cherche les tensions entre ce que tu déclares vouloir et ce qui est réellement posé.",
+  },
+  {
+    n: 2,
+    nom: "Les croisements",
+    quoi: "les dates, les absences, les écarts",
+    contexte:
+      "Plus les faits isolés, mais leurs recoupements : ce qui devrait être là et n'y est pas, les projets sans mouvement depuis des semaines, les domaines de vie que tu as nommés mais où rien n'existe. Une absence dit souvent plus qu'une présence.",
+  },
+  {
+    n: 3,
+    nom: "Tes artefacts",
+    quoi: "ce que tu écris pour toi-même",
+    contexte:
+      "Les mots que tu as choisis quand personne ne regardait : la formulation de tes objectifs, ce que tu décides de mesurer, ce que tu laisses volontairement flou. On se méfie rarement de ce qu'on écrit pour soi.",
+  },
+  {
+    n: 4,
+    nom: "Ta manière",
+    quoi: "la forme de tes réponses",
+    contexte:
+      "Le terrain le plus fin : non plus ce que tu dis, mais comment tu le dis. Les hypothèses que tu acceptes sans discuter contre celles que tu rejettes vite — l'asymétrie dessine ce qui est gardé.",
+  },
 ];
 
 const VERDICTS = [
-  { cle: "VALIDE", label: "Juste", couleur: "border-gold bg-gold-soft" },
-  { cle: "NUANCE", label: "En partie", couleur: "border-ink/30 bg-surface-2" },
-  { cle: "INVALIDE", label: "Faux", couleur: "border-ink/20 bg-surface" },
+  { cle: "VALIDE", label: "Juste", aide: "Tu reconnais. C'est retenu.", couleur: "border-gold bg-gold-soft" },
+  { cle: "NUANCE", label: "En partie", aide: "Il y a du vrai, mais pas tout.", couleur: "border-ink/30 bg-surface-2" },
+  { cle: "INVALIDE", label: "Faux", aide: "Écarté. Ne reviendra pas.", couleur: "border-ink/20 bg-surface" },
 ] as const;
 
 export function Plongee({
@@ -81,10 +109,28 @@ export function Plongee({
       <header className="enter">
         <h1 className="voice-amana text-2xl">La plongée</h1>
         <p className="mt-1 text-sm text-ink-soft">
-          AMANA propose des hypothèses sur ce que tu portes sans le voir. Tu es le seul juge :
-          chacune attend ton verdict.
+          AMANA lit ce que tu as déposé dans ton espace et te renvoie des hypothèses sur ce que tu
+          portes sans le voir. Ce ne sont jamais des conclusions : tu es le seul juge, et chacune
+          attend ton verdict avant que la suivante puisse venir.
+        </p>
+        <p className="mt-2 rounded-[14px] bg-surface-2 px-4 py-3 text-xs leading-relaxed text-ink-soft">
+          Compte une dizaine de minutes. Quatre terrains, trois hypothèses par terrain. Ce que tu
+          reconnais est retenu et nourrit tout l&apos;accompagnement ensuite ; ce que tu écartes ne
+          reviendra pas. Tu peux t&apos;arrêter à n&apos;importe quel niveau.
         </p>
       </header>
+
+      {/* Où l'on est, et sur quoi on regarde en ce moment. Sans cela, les
+          hypothèses tombent sans qu'on sache d'où elles viennent. */}
+      <section
+        className="enter rounded-[20px] border-l-[3px] border-gold bg-surface px-5 py-4"
+        style={{ "--i": 1 } as React.CSSProperties}
+      >
+        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold-deep">
+          Niveau {niveauCourant.n} sur 4 · {niveauCourant.nom}
+        </span>
+        <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{niveauCourant.contexte}</p>
+      </section>
 
       {/* Les quatre terrains — on change de matière, pas d'intensité. */}
       <section className="enter flex flex-col gap-1.5" style={{ "--i": 1 } as React.CSSProperties}>
@@ -142,9 +188,13 @@ export function Plongee({
               <button
                 key={v.cle}
                 onClick={() => trancher(s.id, v.cle)}
-                className={`press rounded-full border px-5 py-2.5 text-xs font-semibold ${v.couleur}`}
+                title={v.aide}
+                className={`press flex flex-col items-start rounded-[16px] border px-4 py-2.5 text-left ${v.couleur}`}
               >
-                {v.label}
+                <span className="text-xs font-semibold">{v.label}</span>
+                <span className="mt-0.5 text-[10px] font-normal leading-tight text-ink-faint">
+                  {v.aide}
+                </span>
               </button>
             ))}
             {ouvert !== s.id && (

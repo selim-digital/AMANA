@@ -186,7 +186,7 @@ export default function CheminPage() {
         setUnivers((i) => (i + dir + n) % n);
         setLeaving(0);
         setDx(0);
-      }, 220);
+      }, 260);
     } else setDx(0);
   }
 
@@ -225,15 +225,19 @@ export default function CheminPage() {
                     ? `translateX(${leaving * 560}px) rotate(${leaving * 20}deg)`
                     : `translateX(${dx}px) rotate(${dx * 0.055}deg)`,
                   opacity: leaving ? 0 : 1,
-                  transition: drag ? "none" : "transform .24s var(--ease-out), opacity .24s var(--ease-out)",
+                  transition: drag
+                    ? "none"
+                    : "transform .26s var(--ease-out), opacity .26s var(--ease-out)",
+                  willChange: "transform",
                 }
               : {
-                  transform: `translateY(${depth * 14}px) scale(${1 - depth * 0.05})`,
-                  transition: "transform .24s var(--ease-out)",
+                  transform: `translate3d(0, ${depth * 14}px, 0) scale(${1 - depth * 0.05})`,
+                  transition: "transform .26s var(--ease-out)",
+                  willChange: "transform",
                 };
             return (
               <div
-                key={uv.nom}
+                key={depth}
                 className="absolute inset-x-5 top-0 bottom-12 mx-auto max-w-md touch-none select-none overflow-hidden rounded-[28px] border border-ink/10 bg-surface shadow-xl"
                 style={{ ...style, zIndex: 3 - depth }}
                 {...(top

@@ -47,32 +47,13 @@ export function PriorityList({ items }: { items: Priority[] }) {
     );
   }
 
-  const [essentielle, ...suivantes] = restantes;
+  // L'essentiel du jour est désormais l'intention, affichée au-dessus. Ici on
+  // ne montre que la suite, et courte : trois lignes, pas un inventaire.
+  const suivantes = restantes.slice(0, 3);
+  const reste = restantes.length - suivantes.length;
 
   return (
     <section className="flex flex-col gap-3" aria-label="Ce qui compte aujourd'hui">
-      {essentielle && (
-        <button
-          onClick={() => basculer(essentielle.id, false)}
-          disabled={pending}
-          className="press relative overflow-hidden rounded-[22px] bg-gold-soft p-5 text-left"
-        >
-          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold-deep">
-            L&apos;essentiel du jour
-          </span>
-          <span className="mt-2 flex items-start gap-3">
-            <Case done={false} celebre={celebre === essentielle.id} accent />
-            <span className="flex-1 text-[17px] font-semibold leading-snug lg:text-xl">
-              {essentielle.title}
-            </span>
-          </span>
-          <span className="mt-3 flex items-center gap-2 text-xs text-gold-deep">
-            <span className="nudge inline-block h-1.5 w-1.5 rounded-full bg-gold-deep" />
-            Touche pour la marquer faite
-          </span>
-        </button>
-      )}
-
       {suivantes.length > 0 && (
         <div className="flex flex-col gap-2">
           <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
@@ -94,6 +75,14 @@ export function PriorityList({ items }: { items: Priority[] }) {
               )}
             </button>
           ))}
+          {reste > 0 && (
+            <a
+              href="/projets"
+              className="press self-start px-1 py-1 text-xs text-ink-faint underline underline-offset-4"
+            >
+              {reste} autre{reste > 1 ? "s" : ""} en attente
+            </a>
+          )}
         </div>
       )}
 

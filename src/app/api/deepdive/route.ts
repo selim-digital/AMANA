@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { COACH } from "@/lib/ia/noyau";
+import { memoireDe } from "@/lib/ia/memoire";
 
 export const maxDuration = 120;
 
@@ -80,49 +81,10 @@ export async function POST(req: Request) {
 
   if (!plongee) return NextResponse.json({ error: "Plongée introuvable" }, { status: 404 });
 
-  // Le matériau : ce que la personne a réellement écrit.
-  const [profile, projets, taches, objectifs] = await Promise.all([
-    prisma.profile.findUnique({ where: { userId } }),
-    prisma.project.findMany({
-      where: { userId, deletedAt: null },
-      select: { name: true, status: true, vision: true, objective: true, domain: true, updatedAt: true },
-    }),
-    prisma.task.findMany({
-      where: { userId, deletedAt: null },
-      select: { title: true, status: true, createdAt: true },
-      take: 30,
-    }),
-    prisma.annualGoal.findMany({ where: { userId }, select: { label: true, why: true } }),
-  ]);
-
-  const jours = (d: Date) => Math.floor((Date.now() - d.getTime()) / 86_400_000);
-
-  const materiau = [
-    profile?.vision ? `Vision : ${profile.vision}` : "Aucune vision formulée.",
-    profile?.domaines?.length
-      ? `Domaines de vie choisis : ${profile.domaines.join(", ")}`
-      : "Aucun domaine choisi.",
-    objectifs.length
-      ? `Objectifs de l'année :\n${objectifs.map((o) => `- ${o.label}${o.why ? ` (parce que : ${o.why})` : " (aucun pourquoi donné)"}`).join("\n")}`
-      : "Aucun objectif d'année défini.",
-    `Projets (${projets.length}) :\n${
-      projets
-        .map(
-          (p) =>
-            `- ${p.name} [${p.status}]${p.domain ? ` · ${p.domain}` : " · sans domaine"}${
-              p.objective ? ` · objectif : ${p.objective}` : " · SANS objectif"
-            }${p.vision ? "" : " · SANS vision"} · inactif depuis ${jours(p.updatedAt)} j`,
-        )
-        .join("\n") || "aucun"
-    }`,
-    `Actions : ${taches.filter((t) => t.status === "DONE").length} terminées, ${
-      taches.filter((t) => t.status !== "DONE").length
-    } en attente${
-      taches.filter((t) => t.status !== "DONE" && jours(t.createdAt) > 10).length
-        ? ` (dont ${taches.filter((t) => t.status !== "DONE" && jours(t.createdAt) > 10).length} depuis plus de 10 jours)`
-        : ""
-    }`,
-  ].join("\n\n");
+  // Le matériau vient de la mémoire partagée : la plongée voit exactement ce
+  // que le chat voit — valeurs, verdicts passés, souvenirs compris. Elle
+  // reconstruisait auparavant son propre contexte, et ignorait la moitié.
+  const materiau = await memoireDe(userId, "plongee");
 
   // Les verdicts déjà rendus nourrissent le niveau suivant.
   const historique = plongee.signaux

@@ -3,6 +3,8 @@ import { getDashboard } from "@/lib/data";
 import { Wordmark } from "@/components/AmanaMark";
 import { Chemin } from "@/components/Scenes";
 import { PriorityList, type Priority } from "./PriorityList";
+import { Intention } from "./Intention";
+import { ProjetsSlider } from "./ProjetsSlider";
 import { MicroProfil } from "./MicroProfil";
 import { ModaleAction } from "./ModaleAction";
 import { ObjectifsAnnee } from "./ObjectifsAnnee";
@@ -13,7 +15,7 @@ import { questionsRestantes } from "@/lib/coaching/profils";
 export default async function DashboardPage() {
   const session = await auth();
   const userId = session!.user.id;
-  const { user, profile, tasks, projects, activeCount, objectifsAnnee, notifications, indices, nudge } =
+  const { user, profile, intention, tasks, projects, activeCount, objectifsAnnee, notifications, indices, nudge } =
     await getDashboard(userId);
 
   // Une question de profil à la fois, au fil de l'eau — jamais une série.
@@ -33,7 +35,12 @@ export default async function DashboardPage() {
 
   const prenom = user?.name?.trim().split(" ")[0] || "toi";
   const initiale = (user?.name?.trim()[0] || "A").toUpperCase();
-  const projet = projects[0];
+  const projets_actifs = projects.map((p) => ({
+    id: p.id,
+    name: p.name,
+    progress: p.progress,
+    objective: p.objective,
+  }));
 
   const priorities: Priority[] = tasks.map((t) => ({
     id: t.id,
@@ -71,24 +78,20 @@ export default async function DashboardPage() {
       </header>
 
       <div className="enter" style={{ "--i": 1 } as React.CSSProperties}>
-        <h1 className="voice-amana text-2xl lg:text-3xl">Bonjour {prenom}</h1>
+        <h1 className="voice-amana text-2xl lg:text-3xl">Paix sur toi, {prenom}</h1>
         <p className="text-sm text-ink-faint">Ton chemin du jour.</p>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1.25fr_1fr] lg:items-start">
         {/* ─────────── Colonne principale : ce qu'on fait aujourd'hui ─────────── */}
         <div className="flex flex-col gap-5">
-          <section
-            className="enter rounded-r-[16px] border-l-[3px] border-gold bg-surface-2 px-4 py-3.5"
-            style={{ "--i": 2 } as React.CSSProperties}
-          >
-            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gold-deep">
-              Intention du jour
-            </span>
-            <p className="voice-amana mt-1 text-[15px]">
-              « Qu&apos;est-ce qui, aujourd&apos;hui, mérite vraiment ton énergie ? »
-            </p>
-          </section>
+          <Intention
+            intention={
+              intention
+                ? { id: intention.id, title: intention.title, done: intention.status === "DONE" }
+                : null
+            }
+          />
 
           {notifications.length > 0 && (
             <Notifications notifs={notifications.map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href }))} />
@@ -167,29 +170,8 @@ export default async function DashboardPage() {
             <Chemin done={Math.min(2 + activeCount, 4)} total={5} />
           </a>
 
-          {projet ? (
-            <a
-              href="/projets"
-              className="enter press lift block rounded-[20px] bg-panel p-5 text-panel-text"
-              style={{ "--i": 5 } as React.CSSProperties}
-            >
-              <span className="text-[11px] uppercase tracking-[0.14em] opacity-60">
-                Projet actif · {activeCount} / 3
-              </span>
-              <h2 className="mt-1.5 text-lg font-semibold">{projet.name}</h2>
-              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/20">
-                <div
-                  className="bar-fill h-full rounded-full bg-gold"
-                  style={{ width: `${Math.max(projet.progress ?? 0, 3)}%` }}
-                />
-              </div>
-              <p className="mt-3 text-[13px] opacity-80">
-                Prochaine étape :{" "}
-                <b className="font-semibold opacity-100">
-                  {projet.objective || "définir la prochaine action"}
-                </b>
-              </p>
-            </a>
+          {projets_actifs.length ? (
+            <ProjetsSlider projets={projets_actifs} actifs={activeCount} />
           ) : (
             <a
               href="/deposer"

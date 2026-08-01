@@ -307,6 +307,20 @@ export async function rendreVerdict(
     data: { verdict, verbatim: verbatim?.trim() || null },
   });
   await logEvent(userId, "deepdive_verdict", { verdict, niveau: signal.niveau });
+
+  // Ce qu'elle reconnaît d'elle-même vaut plus que tout ce qu'on déduit :
+  // ça entre en mémoire durable, et toutes les surfaces IA le verront.
+  if (verdict !== "INVALIDE") {
+    const { memoriser } = await import("@/lib/ia/memoire");
+    await memoriser(
+      userId,
+      `${verdict === "VALIDE" ? "Elle a reconnu" : "Elle a nuancé"} : ${signal.hypothese}${
+        verbatim?.trim() ? ` — dans ses mots : « ${verbatim.trim()} »` : ""
+      }`,
+      "LEARNING",
+      "plongee",
+    );
+  }
   revalidatePath("/deepdive");
 }
 
@@ -527,4 +541,48 @@ export async function supprimerValeur(id: string) {
   await prisma.value.deleteMany({ where: { id, userId } });
   revalidatePath("/profil");
   revalidatePath("/chemin");
+}
+
+// ─────────────────────────── L'intention du jour ───────────────────────────
+
+/**
+ * « Si tu ne devais faire qu'UNE chose aujourd'hui, qu'est-ce que ce serait ? »
+ *
+ * Y répondre est le geste le plus structurant de la journée : accomplir sa
+ * mission principale enclenche le reste. L'intention devient donc une vraie
+ * action — datée, cochable — et non une phrase décorative.
+ */
+export async function definirIntention(texte: string) {
+  const userId = await requireUserId();
+  const titre = texte.trim();
+  if (titre.length < 3 || titre.length > 200) return;
+
+  const debut = new Date();
+  debut.setHours(0, 0, 0, 0);
+
+  // Une seule intention par jour : la nouvelle remplace celle qu'on redéfinit.
+  const deja = await prisma.task.findFirst({
+    where: { userId, deletedAt: null, intentionDu: { gte: debut } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const dueAt = new Date();
+  dueAt.setHours(18, 0, 0, 0);
+
+  if (deja && deja.status !== "DONE") {
+    await prisma.task.update({ where: { id: deja.id }, data: { title: titre } });
+  } else {
+    await prisma.task.create({
+      data: {
+        userId,
+        title: titre,
+        kind: "TASK",
+        priority: "ESSENTIAL",
+        intentionDu: new Date(),
+        dueAt,
+      },
+    });
+    await logEvent(userId, "intention_definie", {});
+  }
+  revalidatePath("/aujourdhui");
 }

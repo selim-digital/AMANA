@@ -311,3 +311,15 @@ main {
   @keyframes scene-pulse { from { opacity: 0.55; } to { opacity: 1; } }
   .anim-glowpulse { animation: scene-pulse 5s ease-in-out infinite alternate; }
 }
+
+/* Un contenu qui se substitue à un autre entre en douceur au lieu de sauter. */
+@keyframes fade-swap {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+.fade-swap {
+  animation: fade-swap 0.42s var(--ease-out) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fade-swap { animation: none; }
+}
