@@ -62,7 +62,7 @@ export function VueUnivers({
 }
 
 /** Les objets de l'univers, en rangée qui défile — on les balaie du pouce. */
-function RangeeObjets({ libelle, objets }: { libelle: string; objets: Objet[] }) {
+export function RangeeObjets({ libelle, objets }: { libelle: string; objets: Objet[] }) {
   const teinte = {
     fait: "border-gold/45 bg-gold-soft",
     encours: "border-ink/15 bg-surface",
@@ -100,7 +100,7 @@ function RangeeObjets({ libelle, objets }: { libelle: string; objets: Objet[] })
 }
 
 /** La frise verticale : d'où l'on part, où l'on en est, où l'on va. */
-function Frise({ etapes }: { etapes: EtapeFrise[] }) {
+export function Frise({ etapes }: { etapes: EtapeFrise[] }) {
   const [ouvert, setOuvert] = useState<number | null>(
     etapes.findIndex((e) => e.etat === "actuel"),
   );

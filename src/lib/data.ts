@@ -19,7 +19,7 @@ const trimestreDuJour = (d = new Date()) =>
 const debutDuJour = () => new Date(new Date().setHours(0, 0, 0, 0));
 
 export async function getDashboard(userId: string) {
-  const [user, profile, notifications, objectifsAnnee, tasks, projects, activeCount, openCount, doneCount, intention] =
+  const [user, profile, notifications, objectifsAnnee, tasks, projects, activeCount, openCount, doneCount, bloquee, projetsTotal, dormants, intention] =
     await Promise.all([
     prisma.user.findUnique({ where: { id: userId } }),
     prisma.profile.findUnique({ where: { userId } }),
@@ -44,11 +44,29 @@ export async function getDashboard(userId: string) {
     }),
     prisma.project.findMany({
       where: { userId, deletedAt: null, status: "ACTIVE" },
-      orderBy: { updatedAt: "desc" },
+      orderBy: { order: "asc" },
+      include: { okrs: { where: { period: trimestreDuJour() }, select: { objective: true } } },
     }),
     prisma.project.count({ where: { userId, deletedAt: null, status: "ACTIVE" } }),
     prisma.task.count({ where: { userId, deletedAt: null, status: { notIn: ["DONE"] } } }),
     prisma.task.count({ where: { userId, deletedAt: null, status: "DONE" } }),
+    // Ce qui traine le plus : la matiere du deprocrastinateur.
+    prisma.task.findFirst({
+      where: { userId, deletedAt: null, status: { notIn: ["DONE"] } },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, title: true, createdAt: true },
+    }),
+    prisma.project.count({
+      where: { userId, deletedAt: null, status: { not: "ARCHIVED" } },
+    }),
+    prisma.project.count({
+      where: {
+        userId,
+        deletedAt: null,
+        status: "ACTIVE",
+        updatedAt: { lt: new Date(Date.now() - 21 * 86_400_000) },
+      },
+    }),
     // L'intention du jour : la seule chose qui compte vraiment aujourd'hui.
     prisma.task.findFirst({
       where: { userId, deletedAt: null, intentionDu: { gte: debutDuJour() } },
@@ -112,6 +130,9 @@ export async function getDashboard(userId: string) {
     user,
     profile,
     intention,
+    bloquee,
+    projetsTotal,
+    dormants,
     // L'intention du jour est affichée à part, en tête : elle ne doit pas
     // réapparaître dans la liste en dessous.
     tasks: tasks.filter((t) => t.id !== intention?.id),
@@ -142,5 +163,41 @@ export async function getTasks(userId: string) {
   return prisma.task.findMany({
     where: { userId, deletedAt: null },
     orderBy: { createdAt: "asc" },
+  });
+}
+
+/**
+ * Les regles de vie et leur suivi sur sept jours.
+ *
+ * On renvoie la semaine entiere, pas seulement aujourd'hui : ce qui compte
+ * est la regularite, et une case cochee isolee ne dit rien.
+ */
+export async function getRegles(userId: string) {
+  const debut = new Date();
+  debut.setHours(0, 0, 0, 0);
+  debut.setDate(debut.getDate() - 6);
+
+  const regles = await prisma.regle.findMany({
+    where: { userId, deletedAt: null },
+    orderBy: { order: "asc" },
+    include: { suivis: { where: { jour: { gte: debut } }, select: { jour: true } } },
+  });
+
+  const cleJour = (d: Date) => d.toISOString().slice(0, 10);
+  const septJours = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(debut);
+    d.setDate(d.getDate() + i);
+    return cleJour(d);
+  });
+  const aujourdhui = septJours[6];
+
+  return regles.map((r) => {
+    const tenus = new Set(r.suivis.map((s) => cleJour(s.jour)));
+    return {
+      id: r.id,
+      label: r.label,
+      tenueAujourdhui: tenus.has(aujourdhui),
+      semaine: septJours.map((j) => tenus.has(j)),
+    };
   });
 }

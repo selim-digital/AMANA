@@ -651,3 +651,72 @@ export async function reglerRythme(methode: string, ombre: 1 | 2) {
   });
   revalidatePath("/profil");
 }
+
+// ─────────────────────────── Les règles de vie ───────────────────────────
+
+const MAX_REGLES = 5;
+
+/** Le jour courant, à minuit — la clé de suivi. */
+function jourCourant() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/**
+ * Enregistre les règles de vie. Cinq au maximum : au-delà on ne tient plus,
+ * on liste. Les règles retirées sont marquées supprimées et non effacées —
+ * l'historique de ce qui a été tenu garde du sens.
+ */
+export async function definirRegles(labels: string[]) {
+  const userId = await requireUserId();
+  const propres = labels
+    .map((l) => l.trim())
+    .filter((l) => l.length >= 3 && l.length <= 120)
+    .slice(0, MAX_REGLES);
+
+  const existantes = await prisma.regle.findMany({
+    where: { userId, deletedAt: null },
+    orderBy: { order: "asc" },
+  });
+
+  const gardees = new Set(propres.map((l) => l.toLowerCase()));
+  for (const r of existantes) {
+    if (!gardees.has(r.label.toLowerCase())) {
+      await prisma.regle.update({ where: { id: r.id }, data: { deletedAt: new Date() } });
+    }
+  }
+
+  const connues = new Map(existantes.map((r) => [r.label.toLowerCase(), r]));
+  for (const [i, label] of propres.entries()) {
+    const deja = connues.get(label.toLowerCase());
+    if (deja) {
+      await prisma.regle.update({ where: { id: deja.id }, data: { order: i, deletedAt: null } });
+    } else {
+      await prisma.regle.create({ data: { userId, label, order: i } });
+    }
+  }
+
+  await logEvent(userId, "regles_definies", { nombre: propres.length });
+  revalidatePath("/aujourdhui");
+}
+
+/** Tenue ou non, aujourd'hui. Un second appel revient en arrière. */
+export async function basculerRegle(regleId: string) {
+  const userId = await requireUserId();
+  const regle = await prisma.regle.findFirst({ where: { id: regleId, userId, deletedAt: null } });
+  if (!regle) return;
+
+  const jour = jourCourant();
+  const suivi = await prisma.regleSuivi.findUnique({
+    where: { regleId_jour: { regleId, jour } },
+  });
+
+  if (suivi) {
+    await prisma.regleSuivi.delete({ where: { id: suivi.id } });
+  } else {
+    await prisma.regleSuivi.create({ data: { regleId, jour, tenue: true } });
+    await logEvent(userId, "regle_tenue", { regleId });
+  }
+  revalidatePath("/aujourdhui");
+}

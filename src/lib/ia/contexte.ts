@@ -16,6 +16,7 @@ export type Sujet =
   | { type: "etape"; cle: string }
   | { type: "cap"; id: string }
   | { type: "sonde"; id?: string }
+  | { type: "blocage" }
   | { type: "bilan"; cadence: "soir" | "semaine" };
 
 export function sujetDepuisParams(p: {
@@ -28,6 +29,7 @@ export function sujetDepuisParams(p: {
   // « parler du projet », et les deux portent le même paramètre `projet`.
   if (p.mode === "cap" && p.projet) return { type: "cap", id: p.projet };
   if (p.mode === "sonde") return { type: "sonde", id: p.tache };
+  if (p.mode === "blocage") return { type: "blocage" };
   if (p.projet) return { type: "projet", id: p.projet };
   if (p.tache) return { type: "tache", id: p.tache };
   if (p.etape) return { type: "etape", cle: p.etape };
@@ -79,6 +81,18 @@ export function cadrageClient(sujet: Sujet, nom?: string) {
           "Je ne sais pas quoi viser",
           "Reprends ta proposition, je l'ajuste",
           "Pose-moi des questions",
+        ],
+      };
+    case "blocage":
+      return {
+        titre: "Mon blocage actuel",
+        sousTitre: "Ce qui revient",
+        ouverture:
+          "Regardons ce qui te freine en ce moment — pas une tâche, le schéma en dessous.",
+        amorces: [
+          "Je repousse toujours les mêmes choses",
+          "J'avance partout sauf là où ça compte",
+          "Je ne sais pas ce qui me bloque",
         ],
       };
     case "sonde":
@@ -225,6 +239,20 @@ Déroulé, cinq messages maximum :
 5. Conclus par « creer_action » ou par l'abandon assumé de la tâche. Les deux sorties sont bonnes.
 
 Ne culpabilise à aucun moment. La procrastination est un signal, pas un défaut : quelque chose dans la tâche ne va pas, et c'est ça qu'on cherche.`,
+    );
+  } else if (sujet.type === "blocage") {
+    l.push(
+      `\n⚠ C'est l'outil « Mon blocage actuel ». On ne cherche PAS une tâche coincée — le coup de sonde s'en occupe. On cherche le SCHÉMA qui se répète au-dessus des tâches.
+
+Déroulé, six messages maximum :
+1. Ouvre par ce que tu observes dans ses données, factuellement : quels domaines avancent, lesquels stagnent, depuis quand. Pas de commentaire, juste le relevé.
+2. Demande-lui ce qu'elle en pense avant de proposer quoi que ce soit. Son interprétation passe avant la tienne.
+3. Propose UNE hypothèse de schéma, et une seule. Les formes courantes : elle avance là où elle est compétente et évite là où elle risque d'échouer ; elle confond activité et progression ; elle protège un domaine en le laissant vague ; elle attend une condition extérieure qui ne viendra pas ; ce qu'elle a posé ne correspond plus à ce qu'elle veut vraiment. Termine par « à toi de me dire si je lis juste ».
+4. Accepte son verdict sans re-plaider. Si elle invalide, une seconde hypothèse au maximum, puis tu t'arrêtes et tu le dis.
+5. Une fois le schéma reconnu, cherche avec elle le PLUS PETIT levier qui le déplace — pas une résolution, un déplacement.
+6. Conclus par « creer_action » sur ce levier.
+
+Un schéma n'est jamais un défaut de caractère : c'est une stratégie qui a servi et qui ne sert plus. Dis-le si c'est utile. Ne prête jamais d'intention, ne psychologise pas, ne diagnostique rien.`,
     );
   } else if (sujet.type === "bilan") {
     l.push(
