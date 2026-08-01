@@ -14,6 +14,7 @@ export type Sujet =
   | { type: "projet"; id: string }
   | { type: "tache"; id: string }
   | { type: "etape"; cle: string }
+  | { type: "cap"; id: string }
   | { type: "bilan"; cadence: "soir" | "semaine" };
 
 export function sujetDepuisParams(p: {
@@ -22,6 +23,9 @@ export function sujetDepuisParams(p: {
   etape?: string;
   mode?: string;
 }): Sujet {
+  // Le mode se teste AVANT le projet : « poser un cap » est plus précis que
+  // « parler du projet », et les deux portent le même paramètre `projet`.
+  if (p.mode === "cap" && p.projet) return { type: "cap", id: p.projet };
   if (p.projet) return { type: "projet", id: p.projet };
   if (p.tache) return { type: "tache", id: p.tache };
   if (p.etape) return { type: "etape", cle: p.etape };
@@ -62,6 +66,19 @@ export function cadrageClient(sujet: Sujet, nom?: string) {
         ouverture: nom ? `Travaillons « ${nom} ». Par où on commence ?` : "Par où on commence ?",
         amorces: ["Je ne sais pas quoi répondre", "Donne-moi un exemple", "Pose-moi des questions"],
       };
+    case "cap":
+      return {
+        titre: "Poser ton cap",
+        sousTitre: nom ?? "Ce trimestre",
+        ouverture: nom
+          ? `Dans trois mois, qu'est-ce qui aura changé sur « ${nom} » ?`
+          : "Dans trois mois, qu'est-ce qui aura changé ?",
+        amorces: [
+          "Je ne sais pas quoi viser",
+          "Reprends ta proposition, je l'ajuste",
+          "Pose-moi des questions",
+        ],
+      };
     case "bilan":
       return {
         titre: sujet.cadence === "soir" ? "Clore la journée" : "Bilan de la semaine",
@@ -101,6 +118,13 @@ export async function nomDuSujet(userId: string, sujet: Sujet): Promise<string |
       select: { title: true },
     });
     return t?.title;
+  }
+  if (sujet.type === "cap") {
+    const p = await prisma.project.findFirst({
+      where: { id: sujet.id, userId },
+      select: { name: true },
+    });
+    return p?.name;
   }
   if (sujet.type === "etape") return sujet.cle;
   return undefined;
@@ -150,6 +174,18 @@ export async function contexteCompact(userId: string, sujet: Sujet): Promise<str
     // Une étape déjà travaillée ne se reprend pas de zéro : on l'affine.
     l.push(
       `\n⚠ Cet échange porte sur l'étape « ${sujet.cle} » de son chemin. Aide-la à la formuler avec ses mots — tu peux proposer des exemples, jamais choisir à sa place. Regarde le socle ci-dessus : si cette étape est déjà renseignée, pars de l'existant pour compléter ou affiner. Ne redemande jamais ce qui y figure déjà.`,
+    );
+  } else if (sujet.type === "cap") {
+    const p = projets.find((x) => x.id === sujet.id);
+    l.push(
+      `
+⚠ Elle vient poser le CAP DU TRIMESTRE de « ${p?.name ?? "son projet"} »${
+        p?.vision ? ` — vision : ${p.vision}` : ""
+      }. Objectif : sortir avec un objectif de trimestre et deux à trois résultats clés mesurables, puis les enregistrer avec « definir_cap ».
+
+Un objectif se formule en RÉSULTAT (« avoir X »), jamais en activité (« travailler sur X »). Un résultat clé se vérifie : un nombre, une date, un état binaire.
+
+Trois questions maximum avant de proposer une formulation complète qu'elle n'aura qu'à corriger — remplir un cap au clavier décourage, c'est pour ça qu'on en arrive là. Dis-lui qu'elle peut te répondre à l'oral en touchant le micro : c'est plus rapide.`,
     );
   } else if (sujet.type === "bilan") {
     l.push(

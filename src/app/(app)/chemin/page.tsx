@@ -414,6 +414,12 @@ export default function CheminPage() {
               >
                 En parler
               </Link>
+              <Link
+                href="/deepdive"
+                className="press flex-1 rounded-full border border-gold/40 bg-gold-soft px-5 py-3 text-center text-sm font-semibold"
+              >
+                Plonger
+              </Link>
               <button onClick={() => setZoom(null)} className="press flex-1 rounded-full border border-ink/20 px-5 py-3 text-sm font-semibold">
                 Fermer
               </button>

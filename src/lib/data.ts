@@ -13,6 +13,9 @@ export async function getProfile(userId: string) {
 }
 
 /** Données du tableau de bord : priorités du jour + projets actifs + indices. */
+const trimestreDuJour = (d = new Date()) =>
+  `${d.getFullYear()}-Q${Math.floor(d.getMonth() / 3) + 1}`;
+
 const debutDuJour = () => new Date(new Date().setHours(0, 0, 0, 0));
 
 export async function getDashboard(userId: string) {
@@ -75,6 +78,15 @@ export async function getDashboard(userId: string) {
       texte: "Tout ce qui comptait est fait. C'est le moment de clore la journée.",
       cta: "Faire mon bilan",
       href: "/conversation?mode=bilan",
+    };
+  } else if (activeCount > 0 && !(await prisma.okr.count({
+      where: { project: { userId, deletedAt: null, status: "ACTIVE" }, period: trimestreDuJour() },
+    }))) {
+    nudge = {
+      texte:
+        "Tes projets avancent sans cap. Trois mois, un objectif, deux repères — tu peux me le dicter.",
+      cta: "Poser mon cap",
+      href: "/semaine",
     };
   } else if (heure >= 18) {
     nudge = {

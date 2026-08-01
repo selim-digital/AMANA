@@ -15,63 +15,52 @@ const stroke = {
   strokeLinejoin: "round" as const,
 };
 
+/**
+ * Trois horizons, un geste.
+ *
+ * On ne navigue plus entre des objets (projets, profil, chemin) mais entre des
+ * temporalités : ce que je fais maintenant, ce que je vise ce trimestre, ce que
+ * je deviens. Les portes n'étaient pas de même nature — un geste, un réglage,
+ * une vue, un objet au même rang — et c'est ce qui obligeait à réfléchir.
+ *
+ * Projets rejoint « Cette semaine », la plongée et le profil rejoignent
+ * « Mon histoire », les réglages passent sous l'avatar.
+ */
 const items: Item[] = [
   {
     href: "/aujourdhui",
-    label: "Aujourd'hui",
-    short: "Jour",
+    label: "Maintenant",
+    short: "Maintenant",
     icon: (
       <svg viewBox="0 0 24 24" className="h-5 w-5" {...stroke}>
-        <path d="M4 19.5c3.5-1.2 4.5-4.5 7-6.5s4-4.5 6-7" />
-        <circle cx="4" cy="19.5" r="1.4" fill="currentColor" stroke="none" />
-        <circle cx="11" cy="13" r="1.4" fill="currentColor" stroke="none" />
-        <circle cx="18.5" cy="5" r="2.2" className="fill-gold" stroke="none" />
+        <circle cx="12" cy="12" r="8.5" />
+        <path d="M12 7.5V12l3 2" />
+        <circle cx="12" cy="12" r="1.6" className="fill-gold" stroke="none" />
       </svg>
     ),
   },
   {
-    href: "/projets",
-    label: "Projets",
-    short: "Projets",
+    href: "/semaine",
+    label: "Cette semaine",
+    short: "Semaine",
     icon: (
       <svg viewBox="0 0 24 24" className="h-5 w-5" {...stroke}>
-        <path d="M4 20V6.5A2.5 2.5 0 0 1 6.5 4H20" />
-        <path d="M7.5 16.5 12 12l4.5-4.5" />
-        <circle cx="16.5" cy="7.5" r="2" className="fill-gold" stroke="none" />
+        <path d="M4 20V4M4 20h16" />
+        <path d="M8 20v-5M12 20v-9M16 20v-4" />
+        <circle cx="20" cy="6.5" r="2" className="fill-gold" stroke="none" />
       </svg>
     ),
   },
   {
     href: "/chemin",
-    label: "Mon chemin",
-    short: "Chemin",
+    label: "Mon histoire",
+    short: "Histoire",
     icon: (
       <svg viewBox="0 0 24 24" className="h-5 w-5" {...stroke}>
-        <path d="M12 3l7.5 4.5v9L12 21l-7.5-4.5v-9z" />
-        <circle cx="12" cy="12" r="2.4" className="fill-gold" stroke="none" />
-      </svg>
-    ),
-  },
-  {
-    href: "/deepdive",
-    label: "La plongée",
-    short: "Plongée",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" {...stroke}>
-        <circle cx="12" cy="12" r="8" />
-        <circle cx="12" cy="12" r="3.5" />
-        <circle cx="12" cy="12" r="1" className="fill-gold" stroke="none" />
-      </svg>
-    ),
-  },
-  {
-    href: "/profil",
-    label: "Profil",
-    short: "Profil",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" {...stroke}>
-        <circle cx="12" cy="8.5" r="3.5" />
-        <path d="M5 20a7 7 0 0 1 14 0" />
+        <path d="M5 20c2.5-2 3-6 6-8s4-4.5 8-8" />
+        <circle cx="5" cy="20" r="1.4" fill="currentColor" stroke="none" />
+        <circle cx="11" cy="12" r="1.4" fill="currentColor" stroke="none" />
+        <circle cx="19" cy="4" r="2.2" className="fill-gold" stroke="none" />
       </svg>
     ),
   },
@@ -126,6 +115,18 @@ export function AppNav() {
         </Link>
 
         <div className="mt-auto flex flex-col gap-2">
+          {/* Ce qui n'est pas un horizon : un réglage, une exploration. */}
+          <Link
+            href="/profil"
+            className={`press flex items-center gap-3 rounded-[14px] px-3 py-2.5 text-sm ${
+              isActive("/profil") ? "bg-gold-soft font-semibold text-ink" : "text-ink-soft hover:bg-surface-2"
+            }`}
+          >
+            <span className="flex h-5 w-5 items-center justify-center rounded-full border border-ink/30 text-[10px] font-bold">
+              {(session?.user?.name?.trim()[0] || "A").toUpperCase()}
+            </span>
+            Mon profil
+          </Link>
           {isAdmin && (
             <Link
               href="/admin"
@@ -159,26 +160,42 @@ export function AppNav() {
       </Link>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-surface/95 backdrop-blur lg:hidden">
+        {/* Deux horizons, le geste au centre, le troisième horizon. Le geste
+            reste au milieu parce que c'est le seul qui ne se contemple pas. */}
         <div className="mx-auto flex max-w-md items-center justify-around px-2 py-2">
-          {items.slice(0, 2).map((it) => (
-            <NavTab key={it.href} item={it} active={isActive(it.href)} />
-          ))}
+          <NavTab item={items[0]} active={isActive(items[0].href)} />
+          <NavTab item={items[1]} active={isActive(items[1].href)} />
 
           <Link
             href="/deposer"
-            className="press flex flex-col items-center gap-1 rounded-full bg-gold px-5 py-2.5 text-[11px] font-bold uppercase tracking-wider text-[#12100D]"
+            aria-label="Déposer ce que j'ai en tête"
+            className="press flex h-12 w-12 flex-none items-center justify-center rounded-full bg-gold text-[#12100D]"
           >
-            Déposer
+            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v11m0 0-4.5-4.5M12 16l4.5-4.5M5 19h14" />
+            </svg>
           </Link>
 
-          {/* La plongée n'est pas un geste quotidien : elle reste hors de la
-              barre mobile, accessible depuis le tableau de bord. */}
-          {items
-            .slice(2)
-            .filter((it) => it.href !== "/deepdive")
-            .map((it) => (
-              <NavTab key={it.href} item={it} active={isActive(it.href)} />
-            ))}
+          <NavTab item={items[2]} active={isActive(items[2].href)} />
+
+          {/* Le réglage se range sous l'avatar, là où tout le monde le cherche. */}
+          <Link
+            href="/profil"
+            aria-current={isActive("/profil") ? "page" : undefined}
+            aria-label="Mon profil"
+            className={`press flex flex-col items-center gap-0.5 px-2 py-1.5 ${
+              isActive("/profil") ? "text-ink" : "text-ink-faint"
+            }`}
+          >
+            <span
+              className={`flex h-[22px] w-[22px] items-center justify-center rounded-full border text-[10px] font-bold ${
+                isActive("/profil") ? "border-gold bg-gold-soft text-ink" : "border-ink/30"
+              }`}
+            >
+              {(session?.user?.name?.trim()[0] || "A").toUpperCase()}
+            </span>
+            <span className="text-[10px] uppercase tracking-wider">Moi</span>
+          </Link>
         </div>
       </nav>
     </>
