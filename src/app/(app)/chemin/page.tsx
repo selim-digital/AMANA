@@ -157,6 +157,7 @@ export default function CheminPage() {
   const [dx, setDx] = useState(0);
   const [drag, setDrag] = useState(false);
   const [leaving, setLeaving] = useState(0);
+  const [fige, setFige] = useState(false);
   const startX = useRef(0);
 
   useEffect(() => {
@@ -183,9 +184,14 @@ export default function CheminPage() {
       const dir = dx < 0 ? 1 : -1;
       setLeaving(dir);
       setTimeout(() => {
+        // On bascule sans transition : les cartes sont déjà visuellement à leur
+        // nouvelle place, seul le contenu change. Deux images plus tard, les
+        // transitions reprennent pour le geste suivant.
+        setFige(true);
         setUnivers((i) => (i + dir + n) % n);
         setLeaving(0);
         setDx(0);
+        requestAnimationFrame(() => requestAnimationFrame(() => setFige(false)));
       }, 260);
     } else setDx(0);
   }
@@ -219,20 +225,29 @@ export default function CheminPage() {
             const top = depth === 0;
             const faites = uv.etapes.filter((e) => e.etat === "fait").length;
             const actuelle = uv.etapes.find((e) => e.etat === "actuel");
+            // Pendant la sortie, les cartes du fond montent d'un rang. Ainsi,
+            // à l'instant où l'index bascule, chaque monde est déjà à la place
+            // que son nouveau rang lui donne : plus rien ne saute.
+            const rang = top ? 0 : depth - (leaving ? 1 : 0);
+
             const style: React.CSSProperties = top
               ? {
                   transform: leaving
-                    ? `translateX(${leaving * 560}px) rotate(${leaving * 20}deg)`
-                    : `translateX(${dx}px) rotate(${dx * 0.055}deg)`,
+                    ? `translate3d(${leaving * 560}px, 0, 0) rotate(${leaving * 20}deg)`
+                    : `translate3d(${dx}px, 0, 0) rotate(${dx * 0.055}deg)`,
                   opacity: leaving ? 0 : 1,
-                  transition: drag
-                    ? "none"
-                    : "transform .26s var(--ease-out), opacity .26s var(--ease-out)",
+                  // `fige` coupe la transition le temps d'une image, au moment
+                  // où le contenu du dessus change : sans cela la nouvelle
+                  // carte revient de 560 px comme si elle arrivait en volant.
+                  transition:
+                    drag || fige
+                      ? "none"
+                      : "transform .26s var(--ease-out), opacity .26s var(--ease-out)",
                   willChange: "transform",
                 }
               : {
-                  transform: `translate3d(0, ${depth * 14}px, 0) scale(${1 - depth * 0.05})`,
-                  transition: "transform .26s var(--ease-out)",
+                  transform: `translate3d(0, ${rang * 14}px, 0) scale(${1 - rang * 0.05})`,
+                  transition: fige ? "none" : "transform .26s var(--ease-out)",
                   willChange: "transform",
                 };
             return (

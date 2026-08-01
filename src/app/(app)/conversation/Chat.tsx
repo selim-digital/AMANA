@@ -28,6 +28,7 @@ export function Chat({
   conversationId,
   messagesInitiaux,
   historique,
+  messageInitial,
 }: {
   cadrage: Cadrage;
   sujet: Sujet;
@@ -35,6 +36,8 @@ export function Chat({
   conversationId?: string;
   messagesInitiaux: Msg[];
   historique: Historique[];
+  /** Dicté depuis le micro central : part tout seul à l'ouverture. */
+  messageInitial?: string;
 }) {
   const router = useRouter();
   const [messages, setMessages] = useState<Msg[]>(messagesInitiaux);
@@ -54,6 +57,16 @@ export function Chat({
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }, [messages]);
+
+  // Ce qui vient d'être dicté part tout seul : la personne a déjà parlé, lui
+  // redemander de valider serait un geste de trop.
+  const depotEnvoye = useRef(false);
+  useEffect(() => {
+    if (!messageInitial?.trim() || depotEnvoye.current || messagesInitiaux.length) return;
+    depotEnvoye.current = true;
+    void send(messageInitial);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messageInitial]);
 
   async function send(text: string) {
     const content = text.trim();

@@ -47,6 +47,7 @@ export default async function DashboardPage() {
     title: t.title,
     kind: t.kind,
     done: t.status === "DONE",
+    age: Math.floor((Date.now() - t.createdAt.getTime()) / 86_400_000),
   }));
 
   const rings = [

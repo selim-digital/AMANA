@@ -586,3 +586,25 @@ export async function definirIntention(texte: string) {
   }
   revalidatePath("/aujourdhui");
 }
+
+/**
+ * Ouvre une nouvelle plongée.
+ *
+ * Les précédentes ne disparaissent pas : elles restent consultables avec leur
+ * analyse. Une plongée est datée — ce qu'on y a reconnu il y a trois mois n'est
+ * pas ce qu'on reconnaîtrait aujourd'hui, et cet écart a de la valeur.
+ */
+export async function nouvellePlongee() {
+  const userId = await requireUserId();
+
+  // Une plongée laissée ouverte est close proprement avant d'en rouvrir une.
+  await prisma.deepDiveSession.updateMany({
+    where: { userId, status: "en_cours" },
+    data: { status: "close", closedAt: new Date() },
+  });
+
+  const creee = await prisma.deepDiveSession.create({ data: { userId } });
+  await logEvent(userId, "deepdive_start", {});
+  revalidatePath("/deepdive");
+  return creee.id;
+}

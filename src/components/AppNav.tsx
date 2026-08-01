@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { AmanaMark, Wordmark } from "@/components/AmanaMark";
+import { ParlerModale } from "@/components/ParlerModale";
 
 type Item = { href: string; label: string; short: string; icon: React.ReactNode };
 
@@ -78,10 +80,13 @@ export function AppNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "ADMIN";
+  const [parler, setParler] = useState(false);
   const isActive = (href: string) => pathname.startsWith(href);
 
   return (
     <>
+      <ParlerModale ouvert={parler} fermer={() => setParler(false)} />
+
       {/* ───────────── Desktop : barre latérale ───────────── */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-ink/10 bg-surface/60 px-4 py-6 backdrop-blur lg:flex">
         <Link href="/aujourdhui" className="mb-8 flex items-center gap-2.5 px-2">
@@ -107,12 +112,17 @@ export function AppNav() {
           ))}
         </nav>
 
-        <Link
-          href="/deposer"
-          className="press mt-6 rounded-full bg-gold px-5 py-3 text-center text-xs font-bold uppercase tracking-widest text-[#12100D]"
+        <button
+          type="button"
+          onClick={() => setParler(true)}
+          className="press mt-6 flex items-center justify-center gap-2 rounded-full bg-gold px-5 py-3 text-xs font-bold uppercase tracking-widest text-[#12100D]"
         >
-          Déposer
-        </Link>
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+            <rect x="9" y="3" width="6" height="11" rx="3" />
+            <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+          </svg>
+          Parler
+        </button>
 
         <div className="mt-auto flex flex-col gap-2">
           {/* Ce qui n'est pas un horizon : un réglage, une exploration. */}
@@ -166,15 +176,7 @@ export function AppNav() {
           <NavTab item={items[0]} active={isActive(items[0].href)} />
           <NavTab item={items[1]} active={isActive(items[1].href)} />
 
-          <Link
-            href="/deposer"
-            aria-label="Déposer ce que j'ai en tête"
-            className="press flex h-12 w-12 flex-none items-center justify-center rounded-full bg-gold text-[#12100D]"
-          >
-            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 5v11m0 0-4.5-4.5M12 16l4.5-4.5M5 19h14" />
-            </svg>
-          </Link>
+          <MicroCentral onClick={() => setParler(true)} />
 
           <NavTab item={items[2]} active={isActive(items[2].href)} />
 
@@ -199,6 +201,38 @@ export function AppNav() {
         </div>
       </nav>
     </>
+  );
+}
+
+/**
+ * Le geste central, dit par son icône.
+ *
+ * Une flèche vers le bas ne se devine pas — on ne savait pas ce que « Déposer »
+ * faisait. Un micro qui respire dit exactement ce qu'il propose : parle, et
+ * AMANA range. L'anneau pulse en continu, doucement, pour appeler sans presser.
+ */
+function MicroCentral({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Parler à AMANA"
+      className="press relative -mt-5 flex h-14 w-14 flex-none items-center justify-center rounded-full bg-gold text-[#12100D] shadow-lg shadow-gold/30"
+    >
+      <span className="halo pointer-events-none absolute inset-0 rounded-full bg-gold" aria-hidden />
+      <svg
+        viewBox="0 0 24 24"
+        className="relative h-6 w-6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2.2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect x="9" y="3" width="6" height="11" rx="3" />
+        <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+      </svg>
+    </button>
   );
 }
 

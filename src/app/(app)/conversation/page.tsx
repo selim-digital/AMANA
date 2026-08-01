@@ -14,6 +14,8 @@ export default async function ConversationPage({
     etape?: string;
     mode?: string;
     c?: string;
+    /** Ce qui vient d'être dicté depuis le micro central. */
+    depot?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -54,6 +56,7 @@ export default async function ConversationPage({
       // La clé force le remontage quand on change d'échange : sans elle, l'état
       // local garderait les messages de la conversation précédente.
       key={conversation?.id ?? `nouveau-${params.projet ?? params.tache ?? params.etape ?? params.mode ?? ""}`}
+      messageInitial={params.depot ?? undefined}
       cadrage={cadrage}
       sujet={params}
       projetLie={conversation?.project ?? null}
