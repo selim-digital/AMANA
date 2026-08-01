@@ -9,6 +9,8 @@ export type Priority = {
   title: string;
   kind: "TASK" | "REMINDER" | "DECISION";
   done: boolean;
+  /** Jours écoulés depuis sa création — au-delà de cinq, on propose une sonde. */
+  age: number;
 };
 
 const LIBELLE = { REMINDER: "Rappel", DECISION: "Décision", TASK: "" } as const;
@@ -60,20 +62,37 @@ export function PriorityList({ items }: { items: Priority[] }) {
             Ensuite
           </span>
           {suivantes.map((p) => (
-            <button
+            <div
               key={p.id}
-              onClick={() => basculer(p.id, false)}
-              disabled={pending}
-              className="press flex items-center gap-3 rounded-[16px] bg-surface-2 px-4 py-3.5 text-left text-sm"
+              className="flex items-center gap-3 rounded-[16px] bg-surface-2 px-4 py-3.5 text-sm"
             >
-              <Case done={false} celebre={celebre === p.id} />
-              <span className="flex-1">{p.title}</span>
-              {LIBELLE[p.kind] && (
-                <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] uppercase tracking-wider text-ink-faint">
-                  {LIBELLE[p.kind]}
-                </span>
+              <button
+                onClick={() => basculer(p.id, false)}
+                disabled={pending}
+                className="press flex min-w-0 flex-1 items-center gap-3 text-left"
+              >
+                <Case done={false} celebre={celebre === p.id} />
+                <span className="min-w-0 flex-1">{p.title}</span>
+              </button>
+
+              {/* Une action qui traîne n'a pas besoin d'être redécoupée mais
+                  comprise : le coup de sonde cherche la nature du blocage. */}
+              {p.age >= 5 ? (
+                <a
+                  href={`/conversation?mode=sonde&tache=${p.id}`}
+                  className="press flex-none rounded-full border border-gold/40 bg-gold-soft px-3 py-1 text-[11px] font-semibold text-gold-deep"
+                  title={`En attente depuis ${p.age} jours`}
+                >
+                  Débloquer
+                </a>
+              ) : (
+                LIBELLE[p.kind] && (
+                  <span className="flex-none rounded-full bg-surface px-2 py-0.5 text-[10px] uppercase tracking-wider text-ink-faint">
+                    {LIBELLE[p.kind]}
+                  </span>
+                )
               )}
-            </button>
+            </div>
           ))}
           {reste > 0 && (
             <a

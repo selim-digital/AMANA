@@ -15,6 +15,7 @@ export type Sujet =
   | { type: "tache"; id: string }
   | { type: "etape"; cle: string }
   | { type: "cap"; id: string }
+  | { type: "sonde"; id?: string }
   | { type: "bilan"; cadence: "soir" | "semaine" };
 
 export function sujetDepuisParams(p: {
@@ -26,6 +27,7 @@ export function sujetDepuisParams(p: {
   // Le mode se teste AVANT le projet : « poser un cap » est plus précis que
   // « parler du projet », et les deux portent le même paramètre `projet`.
   if (p.mode === "cap" && p.projet) return { type: "cap", id: p.projet };
+  if (p.mode === "sonde") return { type: "sonde", id: p.tache };
   if (p.projet) return { type: "projet", id: p.projet };
   if (p.tache) return { type: "tache", id: p.tache };
   if (p.etape) return { type: "etape", cle: p.etape };
@@ -79,6 +81,19 @@ export function cadrageClient(sujet: Sujet, nom?: string) {
           "Pose-moi des questions",
         ],
       };
+    case "sonde":
+      return {
+        titre: "Coup de sonde",
+        sousTitre: nom ?? "Ce qui bloque",
+        ouverture: nom
+          ? `« ${nom} » ne bouge pas. Regardons pourquoi — sans te juger.`
+          : "Qu'est-ce qui ne bouge pas ?",
+        amorces: [
+          "Je ne sais pas pourquoi je n'y arrive pas",
+          "J'y pense tout le temps mais je ne fais rien",
+          "Ça m'ennuie profondément",
+        ],
+      };
     case "bilan":
       return {
         titre: sujet.cadence === "soir" ? "Clore la journée" : "Bilan de la semaine",
@@ -125,6 +140,13 @@ export async function nomDuSujet(userId: string, sujet: Sujet): Promise<string |
       select: { name: true },
     });
     return p?.name;
+  }
+  if (sujet.type === "sonde" && sujet.id) {
+    const t = await prisma.task.findFirst({
+      where: { id: sujet.id, userId },
+      select: { title: true },
+    });
+    return t?.title;
   }
   if (sujet.type === "etape") return sujet.cle;
   return undefined;
@@ -186,6 +208,23 @@ export async function contexteCompact(userId: string, sujet: Sujet): Promise<str
 Un objectif se formule en RÉSULTAT (« avoir X »), jamais en activité (« travailler sur X »). Un résultat clé se vérifie : un nombre, une date, un état binaire.
 
 Trois questions maximum avant de proposer une formulation complète qu'elle n'aura qu'à corriger — remplir un cap au clavier décourage, c'est pour ça qu'on en arrive là. Dis-lui qu'elle peut te répondre à l'oral en touchant le micro : c'est plus rapide.`,
+    );
+  } else if (sujet.type === "sonde") {
+    const t = sujet.id ? taches.find((x) => x.id === sujet.id) : undefined;
+    const j = t ? jours(t.createdAt) : 0;
+    l.push(
+      `\n⚠ C'est un COUP DE SONDE : une plongée courte, ciblée sur un blocage${
+        t ? ` — « ${t.title} »${j >= 3 ? `, en attente depuis ${j} jours` : ""}` : ""
+      }. Ce n'est pas la grande plongée : on ne descend pas quatre niveaux, on lève un seul caillou.
+
+Déroulé, cinq messages maximum :
+1. Nomme le fait, sans commentaire : depuis quand, combien de fois reportée.
+2. Pose UNE hypothèse sur la nature du blocage — et une seule à la fois. Les nature possibles : la tâche est floue (on ne sait pas ce que « fini » veut dire), elle est trop grosse, elle dépend de quelqu'un d'autre, elle porte un enjeu qui dépasse la tâche, ou elle n'a en réalité plus d'importance. Termine par « à toi de me dire si je lis juste ».
+3. Accepte son verdict sans re-plaider. Si elle invalide, propose la nature suivante — jamais plus de deux hypothèses au total.
+4. Une fois la nature reconnue, sors par le remède qui lui correspond : préciser le « fini », réduire à dix minutes, identifier de qui ça dépend, nommer l'enjeu, ou reconnaître que ça n'a plus lieu d'être.
+5. Conclus par « creer_action » ou par l'abandon assumé de la tâche. Les deux sorties sont bonnes.
+
+Ne culpabilise à aucun moment. La procrastination est un signal, pas un défaut : quelque chose dans la tâche ne va pas, et c'est ça qu'on cherche.`,
     );
   } else if (sujet.type === "bilan") {
     l.push(
