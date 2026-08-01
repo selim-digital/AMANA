@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { commitDecharge, type ProjetPropose, type TachePropose } from "@/lib/actions";
+import { Dictee } from "@/components/Dictee";
 
 /** SCR-DUMP + SCR-DUMP-REVIEW — déposer, puis valider ce qu'AMANA a structuré.
  *  La structuration est faite par Claude (/api/decharge) ; rien n'est créé sans validation. */
@@ -82,13 +83,20 @@ export default function DeposerPage() {
 
         {erreur && <p className="step-enter text-sm text-[#B8543F]">{erreur}</p>}
 
-        <button
-          onClick={structurer}
-          disabled={texte.trim().length < 4 || analyse}
-          className="press rounded-full bg-gold px-6 py-3.5 text-sm font-bold uppercase tracking-widest text-[#12100D] disabled:opacity-40"
-        >
-          {analyse ? "AMANA structure…" : "Déposer"}
-        </button>
+        {/* Vider sa tête au clavier demande un effort que beaucoup ne
+            fournissent pas. À l'oral, le vrac sort tel qu'il vient. */}
+        <div className="flex items-center gap-3">
+          <Dictee
+            onTexte={(t) => setTexte((avant) => (avant.trim() ? `${avant.trim()}\n${t}` : t))}
+          />
+          <button
+            onClick={structurer}
+            disabled={texte.trim().length < 4 || analyse}
+            className="press flex-1 rounded-full bg-gold px-6 py-3.5 text-sm font-bold uppercase tracking-widest text-[#12100D] disabled:opacity-40"
+          >
+            {analyse ? "AMANA structure…" : "Déposer"}
+          </button>
+        </div>
 
         {analyse && (
           <p className="step-enter text-center text-xs text-ink-faint">
