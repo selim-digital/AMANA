@@ -13,8 +13,10 @@ export async function getProfile(userId: string) {
 }
 
 /** Données du tableau de bord : priorités du jour + projets actifs + indices. */
+const debutDuJour = () => new Date(new Date().setHours(0, 0, 0, 0));
+
 export async function getDashboard(userId: string) {
-  const [user, profile, notifications, objectifsAnnee, tasks, projects, activeCount, openCount, doneCount] =
+  const [user, profile, notifications, objectifsAnnee, tasks, projects, activeCount, openCount, doneCount, intention] =
     await Promise.all([
     prisma.user.findUnique({ where: { id: userId } }),
     prisma.profile.findUnique({ where: { userId } }),
@@ -44,6 +46,11 @@ export async function getDashboard(userId: string) {
     prisma.project.count({ where: { userId, deletedAt: null, status: "ACTIVE" } }),
     prisma.task.count({ where: { userId, deletedAt: null, status: { notIn: ["DONE"] } } }),
     prisma.task.count({ where: { userId, deletedAt: null, status: "DONE" } }),
+    // L'intention du jour : la seule chose qui compte vraiment aujourd'hui.
+    prisma.task.findFirst({
+      where: { userId, deletedAt: null, intentionDu: { gte: debutDuJour() } },
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
 
   // Indices v1 (proxies honnêtes calculés depuis les données réelles).
@@ -92,7 +99,10 @@ export async function getDashboard(userId: string) {
   return {
     user,
     profile,
-    tasks,
+    intention,
+    // L'intention du jour est affichée à part, en tête : elle ne doit pas
+    // réapparaître dans la liste en dessous.
+    tasks: tasks.filter((t) => t.id !== intention?.id),
     projects,
     activeCount,
     objectifsAnnee,

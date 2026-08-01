@@ -7,6 +7,7 @@ import { ficheOutil } from "@/lib/coaching/outils";
 import { COACH, SYSTEME_COACH } from "@/lib/ia/noyau";
 import { contexteCompact, sujetDepuisParams } from "@/lib/ia/contexte";
 import { outilsEspace } from "@/lib/ia/outils-espace";
+import { retenirDeLEchange } from "@/lib/ia/memoire";
 
 export const maxDuration = 120;
 
@@ -142,6 +143,13 @@ export async function POST(req: Request) {
         await prisma.conversation
           .update({ where: { id: convId }, data: { updatedAt: new Date() } })
           .catch(() => {});
+
+        // Ce qui mérite d'être retenu l'est ici, une fois la réponse partie :
+        // la personne n'attend pas, et la plongée le retrouvera.
+        await retenirDeLEchange(
+          userId,
+          `${dernier?.content ?? ""}\n\nRéponse d'AMANA :\n${text}`,
+        ).catch(() => {});
       }
     },
   });

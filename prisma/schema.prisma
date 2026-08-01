@@ -344,6 +344,8 @@ model Task {
   dueAt     DateTime?
   remindAt  DateTime?
   learning  String?
+  /** Jour dont cette action est l'intention principale. Null pour les autres. */
+  intentionDu DateTime?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   deletedAt DateTime?

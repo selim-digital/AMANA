@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { portraitPourIA } from "@/lib/coaching/profils";
+import { memoireDe } from "@/lib/ia/memoire";
 
 /**
  * Le contexte compact : ce que l'IA doit savoir, et rien de plus.
@@ -108,13 +108,15 @@ export async function nomDuSujet(userId: string, sujet: Sujet): Promise<string |
 
 /** Le bloc de contexte injecté dans la conversation, borné et compact. */
 export async function contexteCompact(userId: string, sujet: Sujet): Promise<string> {
-  const [profile, projets, taches, valeurs, objectifs, echanges] = await Promise.all([
-    prisma.profile.findUnique({ where: { userId } }),
+  const [socle, projets, taches] = await Promise.all([
+    // Le socle vient de la mémoire partagée : toutes les surfaces IA voient
+    // exactement la même chose. Ici on n'ajoute que le cadrage de la porte.
+    memoireDe(userId, "chat"),
     prisma.project.findMany({
       where: { userId, deletedAt: null, status: { in: ["ACTIVE", "SECONDARY"] } },
       orderBy: { order: "asc" },
       take: 6,
-      select: { id: true, name: true, objective: true, vision: true, updatedAt: true },
+      select: { id: true, name: true, vision: true, updatedAt: true },
     }),
     prisma.task.findMany({
       where: { userId, deletedAt: null, status: { notIn: ["DONE"] } },
@@ -122,87 +124,11 @@ export async function contexteCompact(userId: string, sujet: Sujet): Promise<str
       take: 5,
       select: { id: true, title: true, createdAt: true },
     }),
-    prisma.value.findMany({
-      where: { userId },
-      orderBy: { createdAt: "asc" },
-      select: { label: true },
-    }),
-    prisma.annualGoal.findMany({
-      where: { userId, year: new Date().getFullYear() },
-      orderBy: { order: "asc" },
-      select: { label: true, why: true },
-    }),
-    // La mémoire des échanges : sans elle, chaque conversation repart de zéro
-    // et redemande ce qui a déjà été dit ailleurs.
-    prisma.conversation.findMany({
-      where: { userId },
-      orderBy: { updatedAt: "desc" },
-      take: 8,
-      select: { title: true, updatedAt: true, project: { select: { name: true } } },
-    }),
   ]);
 
-  const l: string[] = ["── Ce que tu sais de la personne ──"];
-
-  const portrait = portraitPourIA({
-    disc: (profile?.disc as Record<string, string>) ?? {},
-    wpmot: (profile?.wpmot as Record<string, string>) ?? {},
-    ego: (profile?.ego as Record<string, string>) ?? {},
-  });
-  if (portrait) {
-    l.push(
-      `Sa manière de fonctionner (hypothèses déduites de ses réponses — ne la lui récite JAMAIS, ne la nomme pas ; sers-t'en pour ajuster ton ton et ton niveau de challenge) :\n${portrait}`,
-    );
-  }
-  if (profile?.vision) l.push(`Sa vision : ${profile.vision}`);
-  if (valeurs.length) {
-    l.push(
-      `Ses valeurs, déjà enregistrées : ${valeurs.map((v) => v.label).join(", ")}. Elles sont posées — ne les redemande pas, appuie-toi dessus.`,
-    );
-  }
-  if (objectifs.length) {
-    l.push(
-      `Ses objectifs pour ${new Date().getFullYear()} :\n${objectifs
-        .map((o) => `- ${o.label}${o.why ? ` (parce que : ${o.why})` : ""}`)
-        .join("\n")}`,
-    );
-  }
-  if (profile?.domaines?.length) l.push(`Ses domaines : ${profile.domaines.join(", ")}`);
-  if (profile?.style) l.push(`Accompagnement souhaité : ${profile.style}`);
-
-  l.push(
-    projets.length
-      ? `Ses projets :\n${projets
-          .map((p) => `- ${p.name}${p.objective ? ` (objectif : ${p.objective})` : ""}`)
-          .join("\n")}`
-      : "Elle n'a pas encore de projet actif.",
-  );
-
   const jours = (d: Date) => Math.floor((Date.now() - d.getTime()) / 86_400_000);
-  if (taches.length) {
-    l.push(
-      `Ses actions en attente :\n${taches
-        .map((t) => {
-          const j = jours(t.createdAt);
-          return `- ${t.title}${j >= 5 ? ` (en attente depuis ${j} jours)` : ""}`;
-        })
-        .join("\n")}`,
-    );
-  }
+  const l: string[] = ["── Ce que tu sais de la personne ──", socle];
 
-  // Les échanges précédents : une conversation n'est pas une île.
-  if (echanges.length > 1) {
-    const quand = (d: Date) => {
-      const j = jours(d);
-      return j === 0 ? "aujourd'hui" : j === 1 ? "hier" : `il y a ${j} jours`;
-    };
-    l.push(
-      `Vos échanges précédents (n'y reviens pas si ce n'est pas utile, mais sache qu'ils ont eu lieu) :\n${echanges
-        .slice(1)
-        .map((c) => `- « ${c.title} »${c.project ? ` — projet ${c.project.name}` : ""}, ${quand(c.updatedAt)}`)
-        .join("\n")}`,
-    );
-  }
 
   // Le cadrage propre à la porte empruntée.
   if (sujet.type === "projet") {
@@ -222,20 +148,8 @@ export async function contexteCompact(userId: string, sujet: Sujet): Promise<str
     );
   } else if (sujet.type === "etape") {
     // Une étape déjà travaillée ne se reprend pas de zéro : on l'affine.
-    const cle = sujet.cle.toLowerCase();
-    const dejaFait = cle.includes("valeur")
-      ? valeurs.length
-        ? `Elle a déjà posé ${valeurs.length} valeur(s) : ${valeurs.map((v) => v.label).join(", ")}. Pars de là — complète ou affine, ne recommence pas.`
-        : ""
-      : cle.includes("objectif")
-        ? objectifs.length
-          ? `Ses objectifs de l'année sont déjà posés : ${objectifs.map((o) => o.label).join(", ")}. Pars de là.`
-          : ""
-        : "";
     l.push(
-      `\n⚠ Cet échange porte sur l'étape « ${sujet.cle} » de son chemin. Aide-la à la formuler avec ses mots — tu peux proposer des exemples, jamais choisir à sa place.${
-        dejaFait ? ` ${dejaFait}` : ""
-      }`,
+      `\n⚠ Cet échange porte sur l'étape « ${sujet.cle} » de son chemin. Aide-la à la formuler avec ses mots — tu peux proposer des exemples, jamais choisir à sa place. Regarde le socle ci-dessus : si cette étape est déjà renseignée, pars de l'existant pour compléter ou affiner. Ne redemande jamais ce qui y figure déjà.`,
     );
   } else if (sujet.type === "bilan") {
     l.push(
