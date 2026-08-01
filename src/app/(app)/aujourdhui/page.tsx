@@ -10,13 +10,38 @@ import { ModaleAction } from "./ModaleAction";
 import { ObjectifsAnnee } from "./ObjectifsAnnee";
 import { Notifications } from "./Notifications";
 import { questionsRestantes } from "@/lib/coaching/profils";
+import { evenements, pastilles, universDArrivee, UNIVERS, ORDRE, type CleUnivers } from "@/lib/univers";
+import { BandeauUnivers, type VueUnivers } from "./Univers";
+import { RendezVous } from "@/components/RendezVous";
+import { DemandePosition } from "@/components/DemandePosition";
 
 /** SCR-DASH — « Aujourd'hui » : ce qui compte, et une seule invitation à agir. */
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ u?: string }>;
+}) {
+  const params = await searchParams;
   const session = await auth();
   const userId = session!.user.id;
   const { user, profile, intention, tasks, projects, activeCount, objectifsAnnee, notifications, indices, nudge } =
     await getDashboard(userId);
+
+  // On atterrit dans un univers — celui choisi, ou celui qui porte le plus
+  // d'attente. Les deux autres restent a un doigt, avec leurs pastilles.
+  const evts = await evenements(userId);
+  const compte = pastilles(evts);
+  const actif: CleUnivers =
+    params.u && params.u in UNIVERS ? (params.u as CleUnivers) : universDArrivee(evts);
+  const vues: VueUnivers[] = ORDRE.map((c) => ({
+    ...UNIVERS[c],
+    pastille: compte[c],
+    motifs: evts.filter((x) => x.univers === c).map((x) => x.motif),
+  }));
+  const raison = evts.filter((x) => x.univers === actif).map((x) => x.motif);
+  const raisonPlongee = evts.find(
+    (x) => x.univers === "source" && x.href.startsWith("/deepdive"),
+  )?.motif;
 
   // Une question de profil à la fois, au fil de l'eau — jamais une série.
   const restantes = questionsRestantes({
@@ -60,13 +85,14 @@ export default async function DashboardPage() {
 
   return (
     <main className="flex flex-col gap-5 px-5 py-6">
-      {/* AMANA interpelle une fois par jour, sans jamais culpabiliser. */}
-      <ModaleAction
-        titre="Une chose pour aujourd'hui"
-        texte={nudge.texte}
-        cta={nudge.cta}
-        href={nudge.href}
-        cle={`${jour}-${nudge.cta}`}
+      {/* Cinq rendez-vous par jour, ecrits par l'IA a partir de ce qui attend
+          reellement. Le calage horaire ne se dit pas : il se constate. */}
+      <DemandePosition dejaConnue={profile?.lat !== null && profile?.lat !== undefined} />
+      <RendezVous
+        lat={profile?.lat ?? null}
+        lng={profile?.lng ?? null}
+        methode={profile?.methode ?? null}
+        ombre={profile?.ombre ?? 1}
       />
       <header
         className="enter flex items-center justify-between lg:hidden"
@@ -80,8 +106,10 @@ export default async function DashboardPage() {
 
       <div className="enter" style={{ "--i": 1 } as React.CSSProperties}>
         <h1 className="voice-amana text-2xl lg:text-3xl">Paix sur toi, {prenom}</h1>
-        <p className="text-sm text-ink-faint">Ton chemin du jour.</p>
+        <p className="text-sm text-ink-faint">{UNIVERS[actif].sujet}.</p>
       </div>
+
+      <BandeauUnivers univers={vues} actif={actif} raison={raison} />
 
       <div className="grid gap-5 lg:grid-cols-[1.25fr_1fr] lg:items-start">
         {/* ─────────── Colonne principale : ce qu'on fait aujourd'hui ─────────── */}
@@ -128,15 +156,49 @@ export default async function DashboardPage() {
             </div>
           )}
 
-          {/* Gestes rapides : on n'a jamais à chercher quoi faire ensuite. */}
-          <section
-            className="enter grid grid-cols-3 gap-2.5"
+          {/* Ce qui se construit passe avant les gestes : c'est le sujet, ils
+              ne sont que des moyens. */}
+          {projets_actifs.length > 0 && (
+            <ProjetsSlider projets={projets_actifs} actifs={activeCount} />
+          )}
+
+          {/* La plongée n'est pas un geste rapide parmi d'autres : c'est le
+              seul endroit où l'on regarde ce qu'on ne voit pas. Elle sort du
+              rang, et dit ce qui l'attend. */}
+          <a
+            href="/deepdive"
+            className="enter press lift relative flex items-center gap-4 overflow-hidden rounded-[20px] bg-panel p-5 text-panel-text"
             style={{ "--i": 5 } as React.CSSProperties}
           >
+            <span className="relative flex h-11 w-11 flex-none items-center justify-center rounded-full border border-gold/50">
+              <span className="halo absolute inset-0 rounded-full bg-gold/50" aria-hidden />
+              <svg viewBox="0 0 24 24" className="relative h-5 w-5 text-gold" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <circle cx="12" cy="12" r="8.5" />
+                <circle cx="12" cy="12" r="4" />
+                <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+              </svg>
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] uppercase tracking-[0.16em] opacity-60">
+                La plongée
+              </span>
+              <span className="mt-0.5 block text-[15px] leading-snug">
+                {compte.source > 0
+                  ? raisonPlongee ?? "Ce que tu portes sans le voir."
+                  : "Ce que tu portes sans le voir. Dix minutes, quatre terrains."}
+              </span>
+            </span>
+            <span className="flex-none text-gold">→</span>
+          </a>
+
+          {/* Gestes rapides : on n'a jamais à chercher quoi faire ensuite. */}
+          <section
+            className="enter grid grid-cols-2 gap-2.5"
+            style={{ "--i": 6 } as React.CSSProperties}
+          >
             {[
-              { href: "/deposer", label: "Déposer", d: "M12 4v10m0 0-4-4m4 4 4-4M5 18h14" },
+              { href: "/deposer", label: "Déposer", d: "M9 3h6v11a3 3 0 0 1-6 0zM5 11a7 7 0 0 0 14 0M12 18v3" },
               { href: "/conversation", label: "En parler", d: "M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8Z" },
-              { href: "/deepdive", label: "Plongée", d: "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 4.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z" },
             ].map((a) => (
               <a
                 key={a.href}
@@ -171,9 +233,7 @@ export default async function DashboardPage() {
             <Chemin done={Math.min(2 + activeCount, 4)} total={5} />
           </a>
 
-          {projets_actifs.length ? (
-            <ProjetsSlider projets={projets_actifs} actifs={activeCount} />
-          ) : (
+          {projets_actifs.length ? null : (
             <a
               href="/deposer"
               className="enter press lift block rounded-[20px] border border-ink/10 bg-surface p-5"

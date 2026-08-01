@@ -134,6 +134,12 @@ model Profile {
   domaines   String[]
   style      String?
   motivation String?
+  /** Position, pour caler les rendez-vous du jour. Jamais envoyee ailleurs. */
+  lat        Float?
+  lng        Float?
+  ville      String?
+  methode    String?  // mwl | umm_al_qura | isna | karachi
+  ombre      Int      @default(1) // 1 : majorite des ecoles, 2 : hanafite
   disc       Json?
   wpmot      Json?
   ego        Json?
@@ -233,11 +239,16 @@ model Notification {
   href      String?
   readAt    DateTime?
   emailedAt DateTime?
+  /** Creneau du jour dont ce message est le rendez-vous : "2026-08-01-fajr". */
+  creneau   String?
+  /** Univers concerne : source | build | align. */
+  univers   String?
   createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt])
+  @@unique([userId, creneau])
 }
 
 /** Les 3 objectifs de l'année : ce qui donnera le sentiment de s'être accompli. */
