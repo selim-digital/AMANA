@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { creerActionDepuisChat } from "@/lib/actions";
+import { Dictee } from "@/components/Dictee";
 import { preparerFichier, type PieceJointe } from "@/lib/fichiers";
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -338,10 +339,13 @@ export function Chat({
             <path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l8.49-8.49a3.67 3.67 0 1 1 5.18 5.18l-8.49 8.49a1.83 1.83 0 1 1-2.6-2.6l7.79-7.78" />
           </svg>
         </button>
+        {/* Parler plutôt qu'écrire : ce qui coûte une minute au clavier se
+            dit en quinze secondes. */}
+        <Dictee onTexte={(t) => setInput(t)} />
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Écris librement…"
+          placeholder="Écris ou dicte…"
           className="flex-1 rounded-full border border-ink/15 bg-surface px-5 py-3 text-sm outline-none transition-colors focus:border-gold"
         />
         <button
