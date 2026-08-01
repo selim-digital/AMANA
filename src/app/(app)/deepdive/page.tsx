@@ -31,6 +31,8 @@ export default async function DeepDivePage() {
       niveau={plongee?.niveau ?? 1}
       signaux={signaux}
       close={plongee?.status === "close"}
+      synthese={plongee?.synthese ? JSON.parse(plongee.synthese) : null}
+      tranchees={signaux.filter((x) => x.verdict !== "EN_ATTENTE").length}
     />
   );
 }

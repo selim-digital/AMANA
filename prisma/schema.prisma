@@ -191,6 +191,8 @@ model DeepDiveSession {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   closedAt  DateTime?
+  /** L'analyse finale, produite a la cloture a partir des seuls verdicts. */
+  synthese  String?
 
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   signaux Signal[]
