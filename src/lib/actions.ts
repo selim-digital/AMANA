@@ -608,3 +608,46 @@ export async function nouvellePlongee() {
   revalidatePath("/deepdive");
   return creee.id;
 }
+
+// ─────────────────────────── Le rythme du jour ───────────────────────────
+
+/**
+ * Enregistre la position, une seule fois, pour caler les cinq rendez-vous.
+ *
+ * Elle ne sert qu'à un calcul local d'horaires et n'est transmise à aucun
+ * service. On arrondit au centième de degré — environ un kilomètre : assez
+ * précis pour les horaires, trop grossier pour situer un domicile.
+ */
+export async function enregistrerPosition(lat: number, lng: number, ville?: string) {
+  const userId = await requireUserId();
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return;
+
+  await prisma.profile.upsert({
+    where: { userId },
+    create: {
+      userId,
+      lat: Math.round(lat * 100) / 100,
+      lng: Math.round(lng * 100) / 100,
+      ville: ville?.trim() || null,
+    },
+    update: {
+      lat: Math.round(lat * 100) / 100,
+      lng: Math.round(lng * 100) / 100,
+      ville: ville?.trim() || null,
+    },
+  });
+  revalidatePath("/aujourdhui");
+}
+
+/** Convention de calcul et école pour l'Asr — ce sont ses choix, pas les nôtres. */
+export async function reglerRythme(methode: string, ombre: 1 | 2) {
+  const userId = await requireUserId();
+  const permises = ["mwl", "umm_al_qura", "isna", "karachi"];
+  if (!permises.includes(methode)) return;
+  await prisma.profile.updateMany({
+    where: { userId },
+    data: { methode, ombre },
+  });
+  revalidatePath("/profil");
+}
