@@ -19,6 +19,7 @@ import { BandeauUnivers, type VueUnivers } from "./Univers";
 import { VueUnivers as VueDeLUnivers } from "./VueUnivers";
 import { Deck } from "./Deck";
 import { MicroFlottant } from "@/components/MicroFlottant";
+import { NudgeFlottant } from "@/components/NudgeFlottant";
 import { RendezVous } from "@/components/RendezVous";
 import { DemandePosition } from "@/components/DemandePosition";
 
@@ -99,6 +100,7 @@ export default async function DashboardPage({
         ombre={profile?.ombre ?? 1}
       />
       <MicroFlottant />
+      <NudgeFlottant />
     </>
   );
 
@@ -121,9 +123,9 @@ export default async function DashboardPage({
 
       <BandeauUnivers univers={vues} actif={actif} />
 
-      <div className="grid gap-5 lg:grid-cols-[1.25fr_1fr] lg:items-start">
+      <div className="grid min-w-0 gap-5 lg:grid-cols-[1.25fr_1fr] lg:items-start">
         {/* ─────────── Colonne principale : ce qu'on fait aujourd'hui ─────────── */}
-        <div className="flex flex-col gap-5">
+        <div className="flex min-w-0 flex-col gap-5">
           {/* L'intention du jour appartient a l'execution : elle n'a pas de
               sens dans La Source ni dans Align. */}
           {actif === "build" && (
@@ -213,33 +215,24 @@ export default async function DashboardPage({
           </a>
           )}
 
-          {/* Gestes rapides : on n'a jamais à chercher quoi faire ensuite. */}
-          <section
-            className="enter grid grid-cols-2 gap-2.5"
+          {/* « Déposer » a été retiré : le micro flottant fait exactement ce
+              geste, en mieux. Reste la reprise d'un échange en cours. */}
+          <a
+            href="/conversation"
+            className="enter press lift flex items-center justify-center gap-2.5 rounded-[16px] border border-ink/10 bg-surface px-4 py-3.5"
             style={{ "--i": 6 } as React.CSSProperties}
           >
-            {[
-              { href: "/deposer", label: "Déposer", d: "M9 3h6v11a3 3 0 0 1-6 0zM5 11a7 7 0 0 0 14 0M12 18v3" },
-              { href: "/conversation", label: "En parler", d: "M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8Z" },
-            ].map((a) => (
-              <a
-                key={a.href}
-                href={a.href}
-                className="press lift flex flex-col items-center gap-2 rounded-[16px] border border-ink/10 bg-surface px-2 py-4 text-center"
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5 text-ink-soft" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d={a.d} />
-                </svg>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-soft">
-                  {a.label}
-                </span>
-              </a>
-            ))}
-          </section>
+            <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink-soft" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8Z" />
+            </svg>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-soft">
+              Reprendre un échange
+            </span>
+          </a>
         </div>
 
         {/* ─────────── Colonne d'appui : où j'en suis ─────────── */}
-        <div className="flex flex-col gap-5">
+        <div className="flex min-w-0 flex-col gap-5">
           {actif === "build" && projets_actifs.length === 0 && (
             <a
               href="/deposer"

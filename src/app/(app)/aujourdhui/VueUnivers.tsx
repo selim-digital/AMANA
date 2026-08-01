@@ -45,7 +45,7 @@ export function VueUnivers({
   cochable: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex min-w-0 flex-col gap-6">
       {objets.length > 0 && <RangeeObjets libelle={libelleObjets} objets={objets} />}
       {etapes.length > 0 && <Frise etapes={etapes} />}
       {actions.length > 0 && <Actions actions={actions} cochable={cochable} />}
@@ -62,7 +62,7 @@ function RangeeObjets({ libelle, objets }: { libelle: string; objets: Objet[] })
   } as const;
 
   return (
-    <section className="enter" style={{ "--i": 2 } as React.CSSProperties}>
+    <section className="enter min-w-0" style={{ "--i": 2 } as React.CSSProperties}>
       <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
         {libelle}
       </span>
@@ -71,7 +71,7 @@ function RangeeObjets({ libelle, objets }: { libelle: string; objets: Objet[] })
           <a
             key={o.id}
             href={o.href}
-            className={`press lift flex w-44 flex-none flex-col rounded-[18px] border p-4 ${teinte[o.etat]}`}
+            className={`press lift flex w-40 flex-none flex-col rounded-[18px] border p-4 ${teinte[o.etat]}`}
           >
             <span className="flex items-center gap-1.5">
               <span

@@ -13,7 +13,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!profile) redirect("/onboarding");
 
   return (
-    <div className="min-h-dvh">
+    <div className="min-h-dvh overflow-x-hidden">
       {/* Plus de menu : on entre par les univers, tout se fait a l'interieur
           de celui ou l'on est. Ne reste que la marque et l'initiale. */}
       <Entete />
