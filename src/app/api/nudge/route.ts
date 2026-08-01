@@ -103,7 +103,7 @@ Liens possibles (n'en invente aucun autre) :
 - /aujourdhui?u=build — l'exécution : intention du jour, projets, actions
 - /aujourdhui?u=source — les fondations : vision, valeurs, plongée
 - /aujourdhui?u=align — les bilans et les objectifs de l'année
-- /semaine — les caps du trimestre et leur avancée
+- /projet/<id> — la fiche d un projet : son cap et l avancee de ses resultats cles
 - /deepdive — la plongée
 - /conversation?mode=bilan — clore la journée
 ${enAttente.map((t) => `- /conversation?mode=sonde&tache=${t.id} — débloquer « ${t.title} »`).join("\n")}

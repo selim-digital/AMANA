@@ -52,7 +52,7 @@ export function ProjetsBuild({
         actifs.map((p, i) => (
           <Link
             key={p.id}
-            href={`/conversation?projet=${p.id}`}
+            href={`/projet/${p.id}`}
             className="press lift block rounded-[18px] bg-surface p-4"
           >
             <span className="flex items-baseline gap-2.5">
@@ -60,6 +60,11 @@ export function ProjetsBuild({
                 {i + 1}
               </span>
               <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{p.nom}</span>
+              {p.cap && (
+                <span className="flex-none text-[11px] font-bold text-gold-deep">
+                  {p.avancement} %
+                </span>
+              )}
             </span>
 
             <span className="mt-2.5 block h-1.5 overflow-hidden rounded-full bg-ink/8">
