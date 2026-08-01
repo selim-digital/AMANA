@@ -131,6 +131,8 @@ model Profile {
   userId     String   @unique
   situation  String?
   vision     String?
+  /** Ce que tu sers, en une phrase. Palier optionnel de La Source. */
+  mission    String?
   domaines   String[]
   style      String?
   motivation String?
