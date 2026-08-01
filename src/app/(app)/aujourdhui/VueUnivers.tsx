@@ -16,6 +16,14 @@ type EtapeFrise = {
   etat: "fait" | "actuel" | "avenir";
   detail: string | null;
   href: string | null;
+  /** Ce qui atteste le palier — dit pour qu'on sache ce qui est mesure. */
+  preuve?: string | null;
+  /** Ou en est la preuve quand elle se compte (« 2 sur 3 »). */
+  avancement?: string | null;
+  /** Une branche s'ouvre apres le socle : elle se distingue visuellement. */
+  branche?: boolean;
+  /** Le libelle du geste, quand il est plus precis que « En parler ». */
+  action?: string | null;
 };
 type ActionVue = {
   id: string;
@@ -137,16 +145,30 @@ function Frise({ etapes }: { etapes: EtapeFrise[] }) {
                   ) : null}
                 </span>
 
-                <span
-                  className={`block text-[15px] ${
-                    e.etat === "actuel"
-                      ? "font-semibold text-ink"
-                      : e.etat === "fait"
-                        ? "text-ink-soft"
-                        : "text-ink-faint"
-                  }`}
-                >
-                  {e.titre}
+                <span className="flex items-baseline gap-2">
+                  <span
+                    className={`min-w-0 flex-1 text-[15px] ${
+                      e.etat === "actuel"
+                        ? "font-semibold text-ink"
+                        : e.etat === "fait"
+                          ? "text-ink-soft"
+                          : "text-ink-faint"
+                    }`}
+                  >
+                    {e.titre}
+                  </span>
+                  {/* L'avancement se voit sans déplier : c'est ce qui donne
+                      envie de franchir le palier. */}
+                  {e.avancement && e.etat !== "fait" && (
+                    <span className="flex-none text-[11px] font-semibold text-gold-deep">
+                      {e.avancement}
+                    </span>
+                  )}
+                  {e.branche && (
+                    <span className="flex-none rounded-full border border-ink/15 px-2 py-0.5 text-[9px] uppercase tracking-wider text-ink-faint">
+                      option
+                    </span>
+                  )}
                 </span>
 
                 {actif && e.detail && (
@@ -154,14 +176,23 @@ function Frise({ etapes }: { etapes: EtapeFrise[] }) {
                     {e.detail}
                   </span>
                 )}
+
+                {/* On dit ce qui est mesuré : un palier dont on ignore la
+                    condition ne se travaille pas, il se subit. */}
+                {actif && e.preuve && (
+                  <span className="step-enter mt-1.5 block text-[11px] text-ink-faint">
+                    {e.etat === "fait" ? "Acquis — " : "Ce qui l'atteste : "}
+                    {e.preuve}
+                  </span>
+                )}
               </button>
 
-              {actif && e.href && (
+              {actif && e.href && e.etat !== "fait" && (
                 <a
                   href={e.href}
-                  className="press step-enter mb-2 inline-flex rounded-full border border-ink/20 px-4 py-1.5 text-[11px] font-semibold text-ink-soft"
+                  className="press step-enter mb-2 inline-flex rounded-full border border-gold/40 bg-gold-soft px-4 py-1.5 text-[11px] font-semibold text-gold-deep"
                 >
-                  En parler
+                  {e.action || "En parler"}
                 </a>
               )}
             </li>

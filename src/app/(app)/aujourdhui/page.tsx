@@ -53,7 +53,6 @@ export default async function DashboardPage({
     pastille: compte[c],
     motifs: evts.filter((x) => x.univers === c).map((x) => x.motif),
   }));
-  const contenu = choisi ? await contenuUnivers(userId, actif) : null;
   const raisonPlongee = evts.find(
     (x) => x.univers === "source" && x.href.startsWith("/deepdive"),
   )?.motif;
@@ -64,6 +63,11 @@ export default async function DashboardPage({
     wpmot: (profile?.wpmot as Record<string, string>) ?? {},
     ego: (profile?.ego as Record<string, string>) ?? {},
   });
+  // Le parcours a besoin de savoir si les lectures de profil sont completes.
+  const contenu = choisi
+    ? await contenuUnivers(userId, actif, restantes.length === 0)
+    : null;
+
   // Une série de trois questions — jamais une seule, jamais toute la batterie.
   const serie = restantes.slice(0, 3).map((r) => ({
     cle: r.instrument.cle,

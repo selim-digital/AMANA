@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { etatParcours, type PalierVu } from "@/lib/parcours";
 
 /**
  * Les trois univers — l'organisation réelle du produit.
@@ -243,6 +244,10 @@ export type EtapeFrise = {
   etat: "fait" | "actuel" | "avenir";
   detail: string | null;
   href: string | null;
+  preuve?: string | null;
+  avancement?: string | null;
+  branche?: boolean;
+  action?: string | null;
 };
 
 /** Une action à mener, rattachée à l'univers. */
@@ -262,6 +267,26 @@ export type ContenuUnivers = {
   libelleObjets: string;
 };
 
+
+/**
+ * La frise d'un univers EST son parcours : socle puis branches.
+ *
+ * On ne fabrique plus une frise decorative a cote d'une progression invisible.
+ * Ce qu'on voit est ce qui est mesure.
+ */
+function friseDepuisParcours(paliers: PalierVu[]): EtapeFrise[] {
+  return paliers.map((p) => ({
+    titre: p.titre,
+    etat: p.acquis ? "fait" : p.courant ? "actuel" : "avenir",
+    detail: p.intention,
+    href: p.href,
+    preuve: p.preuve,
+    avancement: p.avancement,
+    branche: p.branche,
+    action: p.action,
+  }));
+}
+
 /**
  * Ce que contient un univers : ses objets en tête, sa frise, ses actions.
  *
@@ -272,7 +297,11 @@ export type ContenuUnivers = {
 export async function contenuUnivers(
   userId: string,
   cle: CleUnivers,
+  profilComplet = false,
 ): Promise<ContenuUnivers> {
+  // La frise est le parcours : socle puis branches, avec leurs preuves.
+  const parcours = (await etatParcours(userId, profilComplet))[cle];
+  const frise = friseDepuisParcours([...parcours.socle, ...parcours.branches]);
   const debutJour = new Date(new Date().setHours(0, 0, 0, 0));
 
   // ─────────────── La Source : ce qui fonde ───────────────
@@ -333,38 +362,7 @@ export async function contenuUnivers(
           href: "/deepdive",
         },
       ],
-      etapes: [
-        {
-          titre: "Ton histoire",
-          etat: profil?.situation ? "fait" : "actuel",
-          detail: "Qui tu es, ce que tu portes.",
-          href: "/conversation?etape=" + encodeURIComponent("Ton histoire"),
-        },
-        {
-          titre: "Ta vision",
-          etat: etape(!!profil?.vision, !!profil?.situation),
-          detail: profil?.vision ?? "Là où tu veux aller.",
-          href: "/conversation?etape=" + encodeURIComponent("Ta vision"),
-        },
-        {
-          titre: "Tes valeurs",
-          etat: etape(nb >= 3, !!profil?.vision),
-          detail: nb ? valeurs.map((v) => v.label).join(" · ") : "Trois mots qui te tiennent.",
-          href: "/conversation?etape=" + encodeURIComponent("Tes valeurs"),
-        },
-        {
-          titre: "La plongée",
-          etat: etape(!!constat, nb >= 3),
-          detail: constat ?? "Ce que tu portes sans le voir.",
-          href: "/deepdive",
-        },
-        {
-          titre: "Clarté",
-          etat: constat && nb >= 3 ? "actuel" : "avenir",
-          detail: "Une vue d'ensemble apaisée de ce qui t'est confié.",
-          href: null,
-        },
-      ],
+      etapes: frise,
       // Une hypothèse en attente est une action : elle demande un verdict.
       actions: signaux.map((s) => ({
         id: s.id,
@@ -427,32 +425,7 @@ export async function contenuUnivers(
           href: "/deepdive",
         },
       ],
-      etapes: [
-        {
-          titre: "Bilan du soir",
-          etat: soir ? "actuel" : "avenir",
-          detail: "Accompli · appris · à ajuster · lâcher-prise.",
-          href: "/conversation?mode=bilan",
-        },
-        {
-          titre: "Bilan de la semaine",
-          etat: dimanche ? "actuel" : "avenir",
-          detail: "Accomplissements, apprentissages, blocages, priorités.",
-          href: "/conversation?mode=bilan-semaine",
-        },
-        {
-          titre: "Bilan du mois",
-          etat: "avenir",
-          detail: "Recul stratégique sur tes domaines.",
-          href: null,
-        },
-        {
-          titre: "Transmission",
-          etat: "avenir",
-          detail: "Le phare : éclairer le chemin des autres.",
-          href: null,
-        },
-      ],
+      etapes: frise,
       actions: [],
     };
   }
@@ -513,30 +486,7 @@ export async function contenuUnivers(
       etat: p.okrs[0] ? "fait" : p.status === "ACTIVE" ? "encours" : "vide",
       href: "/conversation?projet=" + p.id,
     })),
-    etapes: [
-      {
-        titre: "Décharge validée",
-        etat: projets.length ? "fait" : "actuel",
-        detail: projets.length
-          ? projets.length + " projet" + (projets.length > 1 ? "s" : "") + " structuré" + (projets.length > 1 ? "s" : "")
-          : "Vide ta tête : AMANA en fera des projets clairs.",
-        href: "/deposer",
-      },
-      ...ordonnes.slice(0, 5).map((p) => ({
-        titre: p.name,
-        etat: (p.status === "ACTIVE" ? "actuel" : "avenir") as EtapeFrise["etat"],
-        detail:
-          (libelle[p.status] ?? "Projet") +
-          (p.okrs[0] ? " · cap : " + p.okrs[0].objective : " · sans cap trimestriel"),
-        href: "/conversation?projet=" + p.id,
-      })),
-      {
-        titre: "Objectifs de l'année",
-        etat: "avenir" as const,
-        detail: "Tes projets menés au bout, avec constance.",
-        href: "/semaine",
-      },
-    ],
+    etapes: frise,
     // L'intention du jour est affichée à part, en tête : elle ne réapparaît pas.
     actions: taches
       .filter((t) => !(t.intentionDu && t.intentionDu >= debutJour))
