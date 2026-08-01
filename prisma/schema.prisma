@@ -43,6 +43,7 @@ model User {
   annualGoals AnnualGoal[]
   notifications Notification[]
   deepDives DeepDiveSession[]
+  regles        Regle[]
 }
 
 model Account {
@@ -411,4 +412,33 @@ model Insight {
   createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Les cinq regles de vie : ce que la personne decide de tenir chaque jour.
+/// Cinq au maximum — au-dela, on ne tient plus, on liste.
+model Regle {
+  id        String    @id @default(cuid())
+  userId    String
+  label     String
+  order     Int       @default(0)
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  suivis RegleSuivi[]
+
+  @@index([userId, order])
+}
+
+/// Un jour, une regle, tenue ou non. L'absence de ligne vaut « pas encore ».
+model RegleSuivi {
+  id      String   @id @default(cuid())
+  regleId String
+  jour    DateTime
+  tenue   Boolean  @default(true)
+
+  regle Regle @relation(fields: [regleId], references: [id], onDelete: Cascade)
+
+  @@unique([regleId, jour])
+  @@index([regleId, jour])
 }

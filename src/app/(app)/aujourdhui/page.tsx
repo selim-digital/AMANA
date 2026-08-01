@@ -1,10 +1,8 @@
 import { auth } from "@/auth";
-import { getDashboard } from "@/lib/data";
+import { getDashboard, getRegles } from "@/lib/data";
 import { Intention } from "./Intention";
-import { ProjetsSlider } from "./ProjetsSlider";
-import { MicroProfil } from "./MicroProfil";
 import { ObjectifsAnnee } from "./ObjectifsAnnee";
-import { Notifications } from "./Notifications";
+import { Regles } from "./Regles";
 import { questionsRestantes } from "@/lib/coaching/profils";
 import {
   evenements,
@@ -16,7 +14,9 @@ import {
   type CleUnivers,
 } from "@/lib/univers";
 import { BandeauUnivers, type VueUnivers } from "./Univers";
-import { VueUnivers as VueDeLUnivers } from "./VueUnivers";
+import { Frise, RangeeObjets } from "./VueUnivers";
+import { Outil } from "./Outil";
+import { ProjetsBuild } from "./ProjetsBuild";
 import { Deck } from "./Deck";
 import { MicroFlottant } from "@/components/MicroFlottant";
 import { NudgeFlottant } from "@/components/NudgeFlottant";
@@ -39,7 +39,7 @@ export default async function DashboardPage({
   const params = await searchParams;
   const session = await auth();
   const userId = session!.user.id;
-  const { user, profile, intention, tasks, projects, activeCount, objectifsAnnee, notifications, indices, nudge } =
+  const { user, profile, intention, projects, objectifsAnnee, bloquee, projetsTotal, dormants } =
     await getDashboard(userId);
 
   // On atterrit dans un univers — celui choisi, ou celui qui porte le plus
@@ -53,6 +53,8 @@ export default async function DashboardPage({
     pastille: compte[c],
     motifs: evts.filter((x) => x.univers === c).map((x) => x.motif),
   }));
+  // Les regles ne se chargent que la ou elles s'affichent.
+  const regles = choisi === "align" ? await getRegles(userId) : [];
   const raisonPlongee = evts.find(
     (x) => x.univers === "source" && x.href.startsWith("/deepdive"),
   )?.motif;
@@ -68,28 +70,25 @@ export default async function DashboardPage({
     ? await contenuUnivers(userId, actif, restantes.length === 0)
     : null;
 
-  // Une série de trois questions — jamais une seule, jamais toute la batterie.
-  const serie = restantes.slice(0, 3).map((r) => ({
-    cle: r.instrument.cle,
-    instrument: r.instrument.nom,
-    id: r.question.id,
-    texte: r.question.texte,
-    options: r.question.options,
-  }));
-
   const prenom = user?.name?.trim().split(" ")[0] || "toi";
   const projets_actifs = projects.map((p) => ({
     id: p.id,
     name: p.name,
     progress: p.progress,
     objective: p.objective,
+    cap: p.okrs[0]?.objective ?? null,
   }));
 
-  const rings = [
-    { label: "Clarté", value: indices.clarte, cls: "stroke-ink" },
-    { label: "Action", value: indices.action, cls: "stroke-ink-soft" },
-    { label: "Alignement", value: indices.alignement, cls: "stroke-gold" },
-  ];
+
+  // Les trois projets actifs ; le reste est compte, pas liste.
+  const lignesProjets = projets_actifs.slice(0, 3).map((p) => ({
+    id: p.id,
+    nom: p.name,
+    objectif: p.objective,
+    cap: p.cap,
+    avancement: p.progress,
+  }));
+  const autresProjets = Math.max(0, projetsTotal - projets_actifs.length);
 
   // Les rendez-vous et la position vivent des deux côtés de la bascule.
   const veille = (
@@ -121,179 +120,105 @@ export default async function DashboardPage({
     );
   }
 
+  // ─────────── L'intérieur d'un univers : le strict nécessaire ───────────
+  //
+  // Un univers ouvert ne montre que quatre choses : où l'on est, la matière
+  // propre au monde, son outil, et le micro. Tout le reste appartenait à un
+  // tableau de bord — et c'est précisément ce qu'AMANA ne doit pas être.
   return (
     <main className="flex flex-col gap-5 px-5 py-6">
       {veille}
 
       <BandeauUnivers univers={vues} actif={actif} />
 
-      <div className="grid min-w-0 gap-5 lg:grid-cols-[1.25fr_1fr] lg:items-start">
-        {/* ─────────── Colonne principale : ce qu'on fait aujourd'hui ─────────── */}
-        <div className="flex min-w-0 flex-col gap-5">
-          {/* L'intention du jour appartient a l'execution : elle n'a pas de
-              sens dans La Source ni dans Align. */}
-          {actif === "build" && (
-            <Intention
-              intention={
-                intention
-                  ? { id: intention.id, title: intention.title, done: intention.status === "DONE" }
-                  : null
-              }
-            />
-          )}
-
-          {notifications.length > 0 && (
-            <Notifications notifs={notifications.map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href }))} />
-          )}
-
-          {/* Dans Build les projets sont deja la carte noire ci-dessous :
-              on ne les repete pas en rangee. */}
-          <VueDeLUnivers
-            libelleObjets={contenu.libelleObjets}
-            objets={actif === "build" ? [] : contenu.objets}
-            etapes={contenu.etapes}
-            actions={contenu.actions}
-            cochable={actif !== "source"}
-          />
-
-          {/* Le nudge : une seule invitation, choisie selon l'état réel. */}
-          <a
-            href={nudge.href}
-            className="enter press lift flex items-center gap-4 rounded-[20px] border border-gold/30 bg-surface p-5"
-            style={{ "--i": 4 } as React.CSSProperties}
-          >
-            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-gold-soft">
-              <svg viewBox="0 0 24 24" className="h-5 w-5 text-gold-deep" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 19.5c3.5-1.2 4.5-4.5 7-6.5s4-4.5 6-7" />
-                <circle cx="17.5" cy="5.5" r="2.2" fill="currentColor" stroke="none" />
-              </svg>
-            </span>
-            <span className="flex-1">
-              <span className="block text-[15px] leading-snug">{nudge.texte}</span>
-              <span className="mt-1 block text-xs font-semibold uppercase tracking-widest text-gold-deep">
-                {nudge.cta} →
-              </span>
-            </span>
-          </a>
-
-          {serie.length > 0 && (
-            <div className="enter" style={{ "--i": 5 } as React.CSSProperties}>
-              <MicroProfil questions={serie} restantes={restantes.length} />
-            </div>
-          )}
-
-          {/* Ce qui se construit passe avant les gestes : c'est le sujet, ils
-              ne sont que des moyens. */}
-          {actif === "build" && projets_actifs.length > 0 && (
-            <ProjetsSlider projets={projets_actifs} actifs={activeCount} />
-          )}
-
-          {/* La plongée n'est pas un geste rapide parmi d'autres : c'est le
-              seul endroit où l'on regarde ce qu'on ne voit pas. Elle sort du
-              rang, et dit ce qui l'attend. */}
-          {actif === "source" && (
-          <a
+      {/* ─────────── La Source : le chemin, et la plongée ─────────── */}
+      {actif === "source" && (
+        <>
+          <Frise etapes={contenu.etapes} />
+          <Outil
+            nom="La plongée"
+            quoi="AMANA relit ce que tu as déposé et te renvoie des hypothèses sur ce que tu portes sans le voir. Tu restes le seul juge."
+            attente={
+              compte.source > 0
+                ? (raisonPlongee ?? null)
+                : "Quatre terrains, une dizaine de minutes. Ce que tu reconnais est retenu."
+            }
+            cta={compte.source > 0 ? "Reprendre" : "Plonger"}
             href="/deepdive"
-            className="enter press lift relative flex items-center gap-4 overflow-hidden rounded-[20px] bg-panel p-5 text-panel-text"
-            style={{ "--i": 5 } as React.CSSProperties}
-          >
-            <span className="relative flex h-11 w-11 flex-none items-center justify-center rounded-full border border-gold/50">
-              <span className="halo absolute inset-0 rounded-full bg-gold/50" aria-hidden />
-              <svg viewBox="0 0 24 24" className="relative h-5 w-5 text-gold" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <circle cx="12" cy="12" r="8.5" />
-                <circle cx="12" cy="12" r="4" />
-                <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+            icone={
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                <circle cx="12" cy="12" r="8" />
+                <circle cx="12" cy="12" r="3.5" />
+                <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
               </svg>
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[11px] uppercase tracking-[0.16em] opacity-60">
-                La plongée
-              </span>
-              <span className="mt-0.5 block text-[15px] leading-snug">
-                {compte.source > 0
-                  ? raisonPlongee ?? "Ce que tu portes sans le voir."
-                  : "Ce que tu portes sans le voir. Dix minutes, quatre terrains."}
-              </span>
-            </span>
-            <span className="flex-none text-gold">→</span>
-          </a>
-          )}
+            }
+          />
+        </>
+      )}
 
-          {/* « Déposer » a été retiré : le micro flottant fait exactement ce
-              geste, en mieux. Reste la reprise d'un échange en cours. */}
-          <a
-            href="/conversation"
-            className="enter press lift flex items-center justify-center gap-2.5 rounded-[16px] border border-ink/10 bg-surface px-4 py-3.5"
-            style={{ "--i": 6 } as React.CSSProperties}
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink-soft" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8Z" />
-            </svg>
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-soft">
-              Reprendre un échange
-            </span>
-          </a>
-        </div>
+      {/* ─────────── Build : l'action, les projets, le déprocrastinateur ─────────── */}
+      {actif === "build" && (
+        <>
+          <Intention
+            intention={
+              intention
+                ? { id: intention.id, title: intention.title, done: intention.status === "DONE" }
+                : null
+            }
+          />
+          <ProjetsBuild actifs={lignesProjets} autres={autresProjets} />
+          <Outil
+            nom="Le déprocrastinateur"
+            quoi="Une action qui ne bouge pas n'a pas besoin d'être redécoupée mais comprise. On cherche la nature du blocage, puis on sort par une action réduite ou par un abandon assumé."
+            attente={
+              bloquee
+                ? `« ${bloquee.title} » attend depuis ${Math.floor(
+                    (Date.now() - bloquee.createdAt.getTime()) / 86_400_000,
+                  )} jours.`
+                : "Rien ne traîne en ce moment. Reviens quand quelque chose coince."
+            }
+            cta={bloquee ? "Débloquer" : "En parler quand même"}
+            href={bloquee ? `/conversation?mode=sonde&tache=${bloquee.id}` : "/conversation?mode=sonde"}
+            icone={
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h9M11 8l4 4-4 4M17 4v16" />
+              </svg>
+            }
+          />
+        </>
+      )}
 
-        {/* ─────────── Colonne d'appui : où j'en suis ─────────── */}
-        <div className="flex min-w-0 flex-col gap-5">
-          {actif === "build" && projets_actifs.length === 0 && (
-            <a
-              href="/deposer"
-              className="enter press lift block rounded-[20px] border border-ink/10 bg-surface p-5"
-              style={{ "--i": 5 } as React.CSSProperties}
-            >
-              <p className="voice-amana text-[15px]">Pas encore de projet actif.</p>
-              <p className="mt-1 text-sm text-ink-soft">
-                Vide ta tête : AMANA t&apos;aidera à en faire des projets clairs.
-              </p>
-            </a>
-          )}
-
-          {/* Les objectifs de l'année relèvent de ce qu'on vise, pas de ce
-              qu'on fait maintenant : ils appartiennent à Align. */}
-          {actif === "align" && (
-            <div className="enter" style={{ "--i": 6 } as React.CSSProperties}>
-              <ObjectifsAnnee
-                objectifs={objectifsAnnee.map((o) => ({ id: o.id, label: o.label, why: o.why }))}
-                annee={new Date().getFullYear()}
-              />
-            </div>
-          )}
-
-          <section
-            className="enter grid grid-cols-3 gap-2.5"
-            style={{ "--i": 7 } as React.CSSProperties}
-          >
-            {rings.map((k, i) => {
-              const off = 151 - (k.value / 100) * 151;
-              return (
-                <div
-                  key={k.label}
-                  className="flex flex-col items-center gap-1.5 rounded-[16px] bg-surface-2 px-2 py-3.5"
-                >
-                  <svg viewBox="0 0 58 58" className="h-14 w-14" aria-label={`${k.label} ${k.value} %`}>
-                    <circle cx="29" cy="29" r="24" fill="none" className="stroke-ink/10" strokeWidth="5" />
-                    <circle
-                      cx="29"
-                      cy="29"
-                      r="24"
-                      fill="none"
-                      className={`ring-draw ${k.cls}`}
-                      strokeWidth="5"
-                      strokeLinecap="round"
-                      transform="rotate(-90 29 29)"
-                      style={{ "--off": off, "--i": i } as React.CSSProperties}
-                    />
-                  </svg>
-                  <span className="text-sm font-bold tabular-nums">{k.value} %</span>
-                  <span className="text-[10px] uppercase tracking-wider text-ink-soft">{k.label}</span>
-                </div>
-              );
-            })}
-          </section>
-        </div>
-      </div>
+      {/* ─────────── Align : les bilans, le blocage, l'année ─────────── */}
+      {actif === "align" && (
+        <>
+          <RangeeObjets libelle={contenu.libelleObjets} objets={contenu.objets} />
+          {/* Les cinq regles : les conditions qui rendent le reste possible.
+              Elles vivent ici parce que c'est ou se mesure la constance, et
+              que le bilan du soir les passe en revue. */}
+          <Regles regles={regles} />
+          <Outil
+            nom="Mon blocage actuel"
+            quoi="On ne cherche pas une tâche coincée, mais le schéma qui se répète au-dessus. Une hypothèse à la fois, ton verdict fait autorité, et on sort par le plus petit levier qui le déplace."
+            attente={
+              dormants > 0
+                ? `${dormants} projet${dormants > 1 ? "s" : ""} actif${dormants > 1 ? "s" : ""} sans mouvement depuis plus de trois semaines.`
+                : null
+            }
+            cta="Regarder ce qui revient"
+            href="/conversation?mode=blocage"
+            icone={
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 20c2-6 6-9 8-11M20 4c-2 6-6 9-8 11" />
+                <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
+              </svg>
+            }
+          />
+          <ObjectifsAnnee
+            objectifs={objectifsAnnee.map((o) => ({ id: o.id, label: o.label, why: o.why }))}
+            annee={new Date().getFullYear()}
+          />
+        </>
+      )}
     </main>
   );
 }
