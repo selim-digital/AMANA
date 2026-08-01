@@ -150,7 +150,7 @@ export async function evenements(userId: string): Promise<Evenement[]> {
     e.push({
       univers: "build",
       motif: `« ${p.name} » avance sans cap trimestriel`,
-      href: "/semaine",
+      href: "/aujourdhui?u=build",
     });
   }
   for (const t of taches.filter((x) => jours(x.createdAt) >= 5)) {

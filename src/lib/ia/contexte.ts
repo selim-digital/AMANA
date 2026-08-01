@@ -15,6 +15,7 @@ export type Sujet =
   | { type: "tache"; id: string }
   | { type: "etape"; cle: string }
   | { type: "cap"; id: string }
+  | { type: "pointage"; id: string }
   | { type: "sonde"; id?: string }
   | { type: "blocage" }
   | { type: "bilan"; cadence: "soir" | "semaine" };
@@ -28,6 +29,7 @@ export function sujetDepuisParams(p: {
   // Le mode se teste AVANT le projet : « poser un cap » est plus précis que
   // « parler du projet », et les deux portent le même paramètre `projet`.
   if (p.mode === "cap" && p.projet) return { type: "cap", id: p.projet };
+  if (p.mode === "pointage" && p.projet) return { type: "pointage", id: p.projet };
   if (p.mode === "sonde") return { type: "sonde", id: p.tache };
   if (p.mode === "blocage") return { type: "blocage" };
   if (p.projet) return { type: "projet", id: p.projet };
@@ -82,6 +84,13 @@ export function cadrageClient(sujet: Sujet, nom?: string) {
           "Reprends ta proposition, je l'ajuste",
           "Pose-moi des questions",
         ],
+      };
+    case "pointage":
+      return {
+        titre: "Où tu en es",
+        sousTitre: nom ?? "Ce trimestre",
+        ouverture: "Reprenons tes résultats clés, un par un. Réponds comme ça vient.",
+        amorces: ["Ça n'a pas bougé", "J'ai avancé mais je ne sais pas chiffrer", "Guide-moi"],
       };
     case "blocage":
       return {
@@ -148,7 +157,7 @@ export async function nomDuSujet(userId: string, sujet: Sujet): Promise<string |
     });
     return t?.title;
   }
-  if (sujet.type === "cap") {
+  if (sujet.type === "cap" || sujet.type === "pointage") {
     const p = await prisma.project.findFirst({
       where: { id: sujet.id, userId },
       select: { name: true },
@@ -239,6 +248,22 @@ Déroulé, cinq messages maximum :
 5. Conclus par « creer_action » ou par l'abandon assumé de la tâche. Les deux sorties sont bonnes.
 
 Ne culpabilise à aucun moment. La procrastination est un signal, pas un défaut : quelque chose dans la tâche ne va pas, et c'est ça qu'on cherche.`,
+    );
+  } else if (sujet.type === "pointage") {
+    const p = projets.find((x) => x.id === sujet.id);
+    l.push(
+      `\n⚠ Elle vient dire où elle en est sur le cap de « ${p?.name ?? "son projet"} ».
+
+Commence par « lire_cap » : ne redemande JAMAIS un chiffre déjà enregistré.
+
+Puis reprends ses résultats clés UN PAR UN, dans l'ordre. Pour chacun :
+- demande un ÉTAT, jamais un pourcentage : « combien d'entretiens as-tu faits ? », pas « tu es à combien de pour cent ? ». Personne ne pense en pourcentage.
+- convertis toi-même sa réponse et enregistre avec « pointer_resultat ».
+- si rien n'a bougé, enregistre quand même la valeur inchangée et passe au suivant sans commentaire. Une semaine sans mouvement est une information, pas une faute.
+
+Quand tout est pointé, dis en une phrase ce que l'ensemble raconte — ce qui avance, ce qui stagne. Si un résultat n'a pas bougé depuis plusieurs semaines, propose UNE fois de le regarder de plus près, sans insister.
+
+Sois bref : c'est un relevé, pas un entretien. Elle doit pouvoir le faire en deux minutes.`,
     );
   } else if (sujet.type === "blocage") {
     l.push(

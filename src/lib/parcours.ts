@@ -103,7 +103,7 @@ const SOCLE: Record<CleUnivers, Palier[]> = {
       intention: "Un objectif qui ne se vérifie pas reste une intention.",
       preuve: "Un cap trimestriel avec au moins deux résultats clés.",
       action: "Poser ton cap",
-      href: "/semaine",
+      href: "/aujourdhui?u=build",
     },
   ],
   align: [
@@ -167,7 +167,7 @@ const BRANCHES: Record<CleUnivers, (Palier & { pertinente: (e: Mesures) => boole
         "Un cap qu'on ne pointe pas dérive sans qu'on s'en aperçoive. Trois semaines suffisent à le sentir.",
       preuve: "Tes résultats clés pointés trois semaines de suite.",
       action: "Pointer cette semaine",
-      href: "/semaine",
+      href: "/aujourdhui?u=build",
       pertinente: (e) => e.okrs > 0,
     },
     {
@@ -187,7 +187,7 @@ const BRANCHES: Record<CleUnivers, (Palier & { pertinente: (e: Mesures) => boole
         "Un projet actif sans mouvement depuis trois semaines n'est pas actif : il occupe une place.",
       preuve: "Aucun projet actif sans mouvement depuis plus de trois semaines.",
       action: "Arbitrer ce qui dort",
-      href: "/semaine",
+      href: "/aujourdhui?u=build",
       pertinente: (e) => e.dormants > 0,
     },
   ],

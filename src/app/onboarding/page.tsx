@@ -317,7 +317,58 @@ export default function OnboardingPage() {
           </Etape>
         )}
 
+        {/* Les trois mondes et leur instrument. On ne decouvre pas un outil
+            en fouillant : on doit savoir des le premier jour qu'il existe. */}
         {step === 13 && (
+          <Etape titre="Trois mondes, trois outils.">
+            <p className="text-sm leading-relaxed text-ink-soft">
+              Tu entreras toujours par un univers. Chacun a un instrument, et un seul —
+              c'est ce que tu viens y faire quand tu ne sais pas quoi faire.
+            </p>
+            <div className="flex flex-col gap-2.5">
+              {[
+                {
+                  monde: "La Source",
+                  sujet: "Ce qui fonde tes choix",
+                  outil: "La plongee",
+                  quoi: "AMANA relit ce que tu as depose et te renvoie des hypotheses sur ce que tu portes sans le voir. Tu restes le seul juge.",
+                  scene: <DesertScene className="h-full w-full object-cover" />,
+                },
+                {
+                  monde: "Build",
+                  sujet: "Ce que tu construis",
+                  outil: "Le deprocrastinateur",
+                  quoi: "Une action qui ne bouge pas n'a pas besoin d'etre redecoupee mais comprise. On cherche la nature du blocage, puis on sort.",
+                  scene: <ForestScene className="h-full w-full object-cover" />,
+                },
+                {
+                  monde: "Align",
+                  sujet: "Ce que tu transmets",
+                  outil: "Mon blocage actuel",
+                  quoi: "On ne cherche pas une tache coincee, mais le schema qui se repete au-dessus. Une hypothese a la fois.",
+                  scene: <OceanScene className="h-full w-full object-cover" />,
+                },
+              ].map((u) => (
+                <div
+                  key={u.monde}
+                  className="overflow-hidden rounded-[20px] border border-ink/10 bg-surface"
+                >
+                  <div className="relative h-16 overflow-hidden">{u.scene}</div>
+                  <div className="p-4">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">
+                      {u.monde} · {u.sujet}
+                    </span>
+                    <p className="voice-amana mt-0.5 text-[17px] leading-tight">{u.outil}</p>
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-ink-soft">{u.quoi}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Continuer onClick={next} label="J'ai compris" />
+          </Etape>
+        )}
+
+        {step === 14 && (
           <Etape titre="Par où veux-tu commencer ?">
             <div className="flex flex-col gap-3">
               <Porte

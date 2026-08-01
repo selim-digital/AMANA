@@ -104,7 +104,7 @@ export async function getDashboard(userId: string) {
       texte:
         "Tes projets avancent sans cap. Trois mois, un objectif, deux repères — tu peux me le dicter.",
       cta: "Poser mon cap",
-      href: "/semaine",
+      href: "/aujourdhui?u=build",
     };
   } else if (heure >= 18) {
     nudge = {

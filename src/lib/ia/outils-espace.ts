@@ -199,7 +199,7 @@ export function outilsEspace(userId: string) {
           },
         });
         return retenu === voulu
-          ? `Projet « ${titre} » créé (${retenu}). Visible dans « Projets ».`
+          ? `Projet « ${titre} » créé (${retenu}). ENCHAÎNE MAINTENANT sur son cap du trimestre : trois questions, puis « definir_cap ». Un projet sans cap avance sans qu'on sache vers quoi.`
           : `Projet « ${titre} » créé en secondaire : elle a déjà trois projets actifs, c'est le maximum. Dis-le-lui et propose d'arbitrer.`;
       },
     }),
@@ -227,6 +227,93 @@ export function outilsEspace(userId: string) {
       },
     }),
 
+
+    lire_cap: tool({
+      description:
+        "Lit le cap du trimestre d'un projet et l'avancement de chacun de ses résultats clés. À appeler AVANT de demander où elle en est, pour ne jamais redemander un chiffre déjà connu.",
+      inputSchema: z.object({ projet: z.string().describe("Nom du projet") }),
+      execute: async ({ projet }) => {
+        const p = await trouverProjet(userId, projet);
+        if (!p) return `Aucun projet « ${projet} » chez elle.`;
+        const okr = await prisma.okr.findUnique({
+          where: { projectId_period: { projectId: p.id, period: trimestre() } },
+          select: {
+            objective: true,
+            keyResults: {
+              orderBy: { order: "asc" },
+              select: { label: true, target: true, current: true },
+            },
+          },
+        });
+        if (!okr) return `« ${p.name} » n'a pas encore de cap pour ce trimestre.`;
+        return {
+          projet: p.name,
+          objectif: okr.objective,
+          resultats: okr.keyResults.map((k) => ({
+            intitule: k.label,
+            cible: k.target,
+            avancement: `${k.current} %`,
+          })),
+        };
+      },
+    }),
+
+    // Le pointage passe par la parole : « j'en ai fait cinq » vaut mieux qu'un
+    // curseur qu'on traîne sans y penser.
+    pointer_resultat: tool({
+      description:
+        "Enregistre l'avancement d'un résultat clé, en pourcentage, après que la personne a dit où elle en est. Convertis toi-même ses mots en pourcentage : « 5 sur 12 » vaut 42. Ne demande jamais un pourcentage — demande un état, et calcule.",
+      inputSchema: z.object({
+        projet: z.string().describe("Nom du projet"),
+        resultat: z.string().describe("Intitulé du résultat clé, tel qu'il est enregistré"),
+        pourcentage: z.number().describe("Avancement de 0 à 100"),
+        note: z.string().describe("Ce qu'elle en a dit, en une phrase, ou chaîne vide"),
+      }),
+      execute: async ({ projet, resultat, pourcentage, note }) => {
+        const p = await trouverProjet(userId, projet);
+        if (!p) return `Aucun projet « ${projet} » chez elle.`;
+        const okr = await prisma.okr.findUnique({
+          where: { projectId_period: { projectId: p.id, period: trimestre() } },
+          select: { keyResults: { select: { id: true, label: true } } },
+        });
+        if (!okr) return `« ${p.name} » n'a pas de cap ce trimestre.`;
+
+        const cible = resultat.trim().toLowerCase();
+        const kr =
+          okr.keyResults.find((k) => k.label.toLowerCase() === cible) ??
+          okr.keyResults.find((k) => k.label.toLowerCase().includes(cible)) ??
+          okr.keyResults.find((k) => cible.includes(k.label.toLowerCase()));
+        if (!kr) {
+          return `Aucun résultat clé « ${resultat} ». Ceux qui existent : ${okr.keyResults
+            .map((k) => k.label)
+            .join(", ")}.`;
+        }
+
+        const valeur = Math.max(0, Math.min(100, Math.round(pourcentage)));
+
+        // Lundi de la semaine courante : un pointage par semaine, pas par clic.
+        const d = new Date();
+        const jour = (d.getDay() + 6) % 7;
+        const lundi = new Date(d.getFullYear(), d.getMonth(), d.getDate() - jour);
+
+        await prisma.weeklyCheck.upsert({
+          where: { keyResultId_weekOf: { keyResultId: kr.id, weekOf: lundi } },
+          create: { keyResultId: kr.id, weekOf: lundi, value: valeur, note: note?.trim() || null },
+          update: { value: valeur, note: note?.trim() || null },
+        });
+        await prisma.keyResult.update({ where: { id: kr.id }, data: { current: valeur } });
+
+        // L'avancement du projet suit la moyenne de ses résultats clés.
+        const tous = await prisma.keyResult.findMany({
+          where: { okr: { projectId: p.id, period: trimestre() } },
+          select: { current: true },
+        });
+        const moyenne = Math.round(tous.reduce((s, k) => s + k.current, 0) / (tous.length || 1));
+        await prisma.project.update({ where: { id: p.id }, data: { progress: moyenne } });
+
+        return `« ${kr.label} » est à ${valeur} %. Le projet « ${p.name} » passe à ${moyenne} %.`;
+      },
+    }),
     definir_cap: tool({
       description:
         "Pose le cap du trimestre pour un projet : un objectif et ses résultats clés mesurables. À utiliser quand un projet actif n'a pas de cap, ou quand elle veut le revoir.",
