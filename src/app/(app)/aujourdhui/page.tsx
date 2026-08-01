@@ -1,7 +1,5 @@
 import { auth } from "@/auth";
 import { getDashboard } from "@/lib/data";
-import { Wordmark } from "@/components/AmanaMark";
-import { Chemin } from "@/components/Scenes";
 import { Intention } from "./Intention";
 import { ProjetsSlider } from "./ProjetsSlider";
 import { MicroProfil } from "./MicroProfil";
@@ -19,10 +17,19 @@ import {
 } from "@/lib/univers";
 import { BandeauUnivers, type VueUnivers } from "./Univers";
 import { VueUnivers as VueDeLUnivers } from "./VueUnivers";
+import { Deck } from "./Deck";
+import { MicroFlottant } from "@/components/MicroFlottant";
 import { RendezVous } from "@/components/RendezVous";
 import { DemandePosition } from "@/components/DemandePosition";
 
-/** SCR-DASH — « Aujourd'hui » : ce qui compte, et une seule invitation à agir. */
+/**
+ * L'entree de l'application.
+ *
+ * Sans univers choisi : le paquet des trois mondes, en grand, avec le paysage.
+ * Ce n'est pas un tableau de bord — on ne peut rien y faire, on choisit ou
+ * entrer. Avec  : l'interieur de cet univers, et rien de ce qui appartient
+ * aux deux autres.
+ */
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -38,15 +45,14 @@ export default async function DashboardPage({
   // d'attente. Les deux autres restent a un doigt, avec leurs pastilles.
   const evts = await evenements(userId);
   const compte = pastilles(evts);
-  const actif: CleUnivers =
-    params.u && params.u in UNIVERS ? (params.u as CleUnivers) : universDArrivee(evts);
+  const choisi = params.u && params.u in UNIVERS ? (params.u as CleUnivers) : null;
+  const actif: CleUnivers = choisi ?? universDArrivee(evts);
   const vues: VueUnivers[] = ORDRE.map((c) => ({
     ...UNIVERS[c],
     pastille: compte[c],
     motifs: evts.filter((x) => x.univers === c).map((x) => x.motif),
   }));
-  const raison = evts.filter((x) => x.univers === actif).map((x) => x.motif);
-  const contenu = await contenuUnivers(userId, actif);
+  const contenu = choisi ? await contenuUnivers(userId, actif) : null;
   const raisonPlongee = evts.find(
     (x) => x.univers === "source" && x.href.startsWith("/deepdive"),
   )?.motif;
@@ -67,7 +73,6 @@ export default async function DashboardPage({
   }));
 
   const prenom = user?.name?.trim().split(" ")[0] || "toi";
-  const initiale = (user?.name?.trim()[0] || "A").toUpperCase();
   const projets_actifs = projects.map((p) => ({
     id: p.id,
     name: p.name,
@@ -81,8 +86,9 @@ export default async function DashboardPage({
     { label: "Alignement", value: indices.alignement, cls: "stroke-gold" },
   ];
 
-  return (
-    <main className="flex flex-col gap-5 px-5 py-6">
+  // Les rendez-vous et la position vivent des deux côtés de la bascule.
+  const veille = (
+    <>
       {/* Cinq rendez-vous par jour, ecrits par l'IA a partir de ce qui attend
           reellement. Le calage horaire ne se dit pas : il se constate. */}
       <DemandePosition dejaConnue={profile?.lat !== null && profile?.lat !== undefined} />
@@ -92,22 +98,28 @@ export default async function DashboardPage({
         methode={profile?.methode ?? null}
         ombre={profile?.ombre ?? 1}
       />
-      <header
-        className="enter flex items-center justify-between lg:hidden"
-        style={{ "--i": 0 } as React.CSSProperties}
-      >
-        <Wordmark className="text-sm" />
-        <span className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/30 text-xs font-bold">
-          {initiale}
-        </span>
-      </header>
+      <MicroFlottant />
+    </>
+  );
 
-      <div className="enter" style={{ "--i": 1 } as React.CSSProperties}>
-        <h1 className="voice-amana text-2xl lg:text-3xl">Paix sur toi, {prenom}</h1>
-        <p className="text-sm text-ink-faint">{UNIVERS[actif].sujet}.</p>
-      </div>
+  // ─────────── Sans univers choisi : le paquet, et rien d'autre ───────────
+  if (!choisi || !contenu) {
+    return (
+      <>
+        {veille}
+        <div className="px-5 pt-5">
+          <p className="voice-amana text-lg">Paix sur toi, {prenom}</p>
+        </div>
+        <Deck cartes={vues} conseille={actif} />
+      </>
+    );
+  }
 
-      <BandeauUnivers univers={vues} actif={actif} raison={raison} />
+  return (
+    <main className="flex flex-col gap-5 px-5 py-6">
+      {veille}
+
+      <BandeauUnivers univers={vues} actif={actif} />
 
       <div className="grid gap-5 lg:grid-cols-[1.25fr_1fr] lg:items-start">
         {/* ─────────── Colonne principale : ce qu'on fait aujourd'hui ─────────── */}
@@ -173,6 +185,7 @@ export default async function DashboardPage({
           {/* La plongée n'est pas un geste rapide parmi d'autres : c'est le
               seul endroit où l'on regarde ce qu'on ne voit pas. Elle sort du
               rang, et dit ce qui l'attend. */}
+          {actif === "source" && (
           <a
             href="/deepdive"
             className="enter press lift relative flex items-center gap-4 overflow-hidden rounded-[20px] bg-panel p-5 text-panel-text"
@@ -198,6 +211,7 @@ export default async function DashboardPage({
             </span>
             <span className="flex-none text-gold">→</span>
           </a>
+          )}
 
           {/* Gestes rapides : on n'a jamais à chercher quoi faire ensuite. */}
           <section
@@ -226,22 +240,7 @@ export default async function DashboardPage({
 
         {/* ─────────── Colonne d'appui : où j'en suis ─────────── */}
         <div className="flex flex-col gap-5">
-          <a
-            href="/chemin"
-            aria-label="Ouvrir ton chemin"
-            className="enter press block"
-            style={{ "--i": 4 } as React.CSSProperties}
-          >
-            <span className="flex items-baseline justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
-                Ton chemin
-              </span>
-              <span className="text-[11px] text-gold-deep">Explorer →</span>
-            </span>
-            <Chemin done={Math.min(2 + activeCount, 4)} total={5} />
-          </a>
-
-          {projets_actifs.length ? null : (
+          {actif === "build" && projets_actifs.length === 0 && (
             <a
               href="/deposer"
               className="enter press lift block rounded-[20px] border border-ink/10 bg-surface p-5"
@@ -254,12 +253,16 @@ export default async function DashboardPage({
             </a>
           )}
 
-          <div className="enter" style={{ "--i": 6 } as React.CSSProperties}>
-            <ObjectifsAnnee
-              objectifs={objectifsAnnee.map((o) => ({ id: o.id, label: o.label, why: o.why }))}
-              annee={new Date().getFullYear()}
-            />
-          </div>
+          {/* Les objectifs de l'année relèvent de ce qu'on vise, pas de ce
+              qu'on fait maintenant : ils appartiennent à Align. */}
+          {actif === "align" && (
+            <div className="enter" style={{ "--i": 6 } as React.CSSProperties}>
+              <ObjectifsAnnee
+                objectifs={objectifsAnnee.map((o) => ({ id: o.id, label: o.label, why: o.why }))}
+                annee={new Date().getFullYear()}
+              />
+            </div>
+          )}
 
           <section
             className="enter grid grid-cols-3 gap-2.5"
