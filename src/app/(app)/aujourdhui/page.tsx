@@ -2,16 +2,23 @@ import { auth } from "@/auth";
 import { getDashboard } from "@/lib/data";
 import { Wordmark } from "@/components/AmanaMark";
 import { Chemin } from "@/components/Scenes";
-import { PriorityList, type Priority } from "./PriorityList";
 import { Intention } from "./Intention";
 import { ProjetsSlider } from "./ProjetsSlider";
 import { MicroProfil } from "./MicroProfil";
-import { ModaleAction } from "./ModaleAction";
 import { ObjectifsAnnee } from "./ObjectifsAnnee";
 import { Notifications } from "./Notifications";
 import { questionsRestantes } from "@/lib/coaching/profils";
-import { evenements, pastilles, universDArrivee, UNIVERS, ORDRE, type CleUnivers } from "@/lib/univers";
+import {
+  evenements,
+  pastilles,
+  universDArrivee,
+  contenuUnivers,
+  UNIVERS,
+  ORDRE,
+  type CleUnivers,
+} from "@/lib/univers";
 import { BandeauUnivers, type VueUnivers } from "./Univers";
+import { VueUnivers as VueDeLUnivers } from "./VueUnivers";
 import { RendezVous } from "@/components/RendezVous";
 import { DemandePosition } from "@/components/DemandePosition";
 
@@ -39,6 +46,7 @@ export default async function DashboardPage({
     motifs: evts.filter((x) => x.univers === c).map((x) => x.motif),
   }));
   const raison = evts.filter((x) => x.univers === actif).map((x) => x.motif);
+  const contenu = await contenuUnivers(userId, actif);
   const raisonPlongee = evts.find(
     (x) => x.univers === "source" && x.href.startsWith("/deepdive"),
   )?.motif;
@@ -67,21 +75,11 @@ export default async function DashboardPage({
     objective: p.objective,
   }));
 
-  const priorities: Priority[] = tasks.map((t) => ({
-    id: t.id,
-    title: t.title,
-    kind: t.kind,
-    done: t.status === "DONE",
-    age: Math.floor((Date.now() - t.createdAt.getTime()) / 86_400_000),
-  }));
-
   const rings = [
     { label: "Clarté", value: indices.clarte, cls: "stroke-ink" },
     { label: "Action", value: indices.action, cls: "stroke-ink-soft" },
     { label: "Alignement", value: indices.alignement, cls: "stroke-gold" },
   ];
-
-  const jour = new Date().toISOString().slice(0, 10);
 
   return (
     <main className="flex flex-col gap-5 px-5 py-6">
@@ -114,21 +112,31 @@ export default async function DashboardPage({
       <div className="grid gap-5 lg:grid-cols-[1.25fr_1fr] lg:items-start">
         {/* ─────────── Colonne principale : ce qu'on fait aujourd'hui ─────────── */}
         <div className="flex flex-col gap-5">
-          <Intention
-            intention={
-              intention
-                ? { id: intention.id, title: intention.title, done: intention.status === "DONE" }
-                : null
-            }
-          />
+          {/* L'intention du jour appartient a l'execution : elle n'a pas de
+              sens dans La Source ni dans Align. */}
+          {actif === "build" && (
+            <Intention
+              intention={
+                intention
+                  ? { id: intention.id, title: intention.title, done: intention.status === "DONE" }
+                  : null
+              }
+            />
+          )}
 
           {notifications.length > 0 && (
             <Notifications notifs={notifications.map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href }))} />
           )}
 
-          <div className="enter" style={{ "--i": 3 } as React.CSSProperties}>
-            <PriorityList items={priorities} />
-          </div>
+          {/* Dans Build les projets sont deja la carte noire ci-dessous :
+              on ne les repete pas en rangee. */}
+          <VueDeLUnivers
+            libelleObjets={contenu.libelleObjets}
+            objets={actif === "build" ? [] : contenu.objets}
+            etapes={contenu.etapes}
+            actions={contenu.actions}
+            cochable={actif !== "source"}
+          />
 
           {/* Le nudge : une seule invitation, choisie selon l'état réel. */}
           <a
@@ -158,7 +166,7 @@ export default async function DashboardPage({
 
           {/* Ce qui se construit passe avant les gestes : c'est le sujet, ils
               ne sont que des moyens. */}
-          {projets_actifs.length > 0 && (
+          {actif === "build" && projets_actifs.length > 0 && (
             <ProjetsSlider projets={projets_actifs} actifs={activeCount} />
           )}
 
