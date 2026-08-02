@@ -40,8 +40,11 @@ export function sujetDepuisParams(p: {
   return { type: "libre" };
 }
 
+/** Ce que la personne a mené à terme aujourd'hui — pour le lui rendre. */
+export type ReleveDuJour = { faites: string[]; essentiel: string | null; essentielFait: boolean };
+
 /** Titre et amorces affichés par le chat selon la porte empruntée. */
-export function cadrageClient(sujet: Sujet, nom?: string) {
+export function cadrageClient(sujet: Sujet, nom?: string, releve?: ReleveDuJour) {
   switch (sujet.type) {
     case "projet":
       return {
@@ -117,16 +120,32 @@ export function cadrageClient(sujet: Sujet, nom?: string) {
           "Ça m'ennuie profondément",
         ],
       };
-    case "bilan":
+    case "bilan": {
+      // On ne demande jamais ce qui est enregistré : on le rend. La question
+      // ne porte que sur ce que nous ne pouvons pas savoir — sa satisfaction.
+      const n = releve?.faites.length ?? 0;
+      const ouvertureSoir =
+        n === 0
+          ? "Rien n'a été coché aujourd'hui. Raconte-moi ce qui s'est passé — une journée peut être pleine sans qu'une case le soit."
+          : releve?.essentielFait
+            ? `Tu as mené ${n} action${n > 1 ? "s" : ""} à son terme aujourd'hui, dont ton essentiel : « ${releve.essentiel} ». Est-ce que tu en es satisfait ?`
+            : `Tu as mené ${n} action${n > 1 ? "s" : ""} à son terme aujourd'hui${
+                releve?.essentiel ? `, mais pas ton essentiel : « ${releve.essentiel} »` : ""
+              }. Est-ce que tu en es satisfait ?`;
+
       return {
         titre: sujet.cadence === "soir" ? "Clore la journée" : "Bilan de la semaine",
         sousTitre: "Deux minutes",
         ouverture:
+          sujet.cadence === "soir" ? ouvertureSoir : "Regardons ta semaine. Qu'est-ce qui a avancé ?",
+        amorces:
           sujet.cadence === "soir"
-            ? "Qu'est-ce que tu as accompli aujourd'hui, même petit ?"
-            : "Regardons ta semaine. Qu'est-ce qui a avancé ?",
-        amorces: ["Peu de choses, honnêtement", "Beaucoup, mais je suis fatigué", "Accompagne-moi"],
+            ? n === 0
+              ? ["La journée a été prise ailleurs", "Je n'ai pas pensé à cocher", "Accompagne-moi"]
+              : ["Oui, la journée est bonne", "Non, il manque l'essentiel", "Accompagne-moi"]
+            : ["Peu de choses, honnêtement", "Beaucoup, mais je suis fatigué", "Accompagne-moi"],
       };
+    }
     default:
       return {
         titre: "En parler",
