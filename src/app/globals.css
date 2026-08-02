@@ -386,3 +386,17 @@ svg:not(.eveil) > .halo-or { display: none; }
   .eveil .pt3 { animation: none; opacity: 1; transform: none; }
   .eveil .halo-or { display: none; }
 }
+
+/* Le nom et la devise montent après la marque, jamais avec elle : on regarde
+   le symbole s'éveiller, puis on lit. */
+@keyframes ouverture-monte {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+.ouverture-nom { animation: ouverture-monte 0.7s var(--ease-out) 0.55s both; }
+.ouverture-mot { animation: ouverture-monte 0.7s var(--ease-out) 0.8s both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ouverture-nom,
+  .ouverture-mot { animation: none; opacity: 1; transform: none; }
+}
