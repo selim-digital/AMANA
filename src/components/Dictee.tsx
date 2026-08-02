@@ -15,15 +15,21 @@ import { useEffect, useRef, useState } from "react";
  *
  * ── Pourquoi le texte se répétait ──
  *
- * L'implémentation précédente accumulait les segments définitifs au fil des
- * événements. Or le moteur d'Android renvoie régulièrement des résultats déjà
- * transmis, et se relance de lui-même après un silence en réinitialisant ses
- * index : chaque re-livraison s'ajoutait au lieu de remplacer.
+ * Deux causes, corrigées l'une après l'autre.
  *
- * Ici on ne cumule plus rien : à chaque événement, la transcription est
- * RECONSTRUITE depuis le premier résultat. L'opération est idempotente, donc
- * une re-livraison ne peut plus dupliquer. Seuls les redémarrages du moteur
- * sont mémorisés à part, dans `socleRef`.
+ * La première : on accumulait les segments définitifs au fil des événements,
+ * alors que le moteur relivre régulièrement des résultats déjà transmis. La
+ * transcription est désormais RECONSTRUITE depuis le premier résultat à chaque
+ * événement — une opération idempotente ne peut pas dupliquer.
+ *
+ * La seconde, plus insidieuse : au redémarrage du moteur, on versait dans le
+ * socle le texte affiché, PROVISOIRE COMPRIS. Or le provisoire n'est qu'un
+ * aperçu de ce que le moteur croit entendre. En repartant, il réentendait la
+ * même fin de phrase et la confirmait — on l'avait deux fois. Seul le
+ * définitif rejoint le socle ; l'aperçu est jeté.
+ *
+ * Enfin `continuous` est abandonné : sur Android il fait boucler le moteur sur
+ * lui-même. Une session par phrase, relancée à la main, est prévisible partout.
  */
 
 type Reco = {
@@ -85,7 +91,9 @@ export function Dictee({
   const socleRef = useRef("");
   /** L'intention de la personne : le moteur peut s'arrêter, pas elle. */
   const vouluRef = useRef(false);
-  /** La derniere transcription emise : on la reprend au redemarrage du moteur. */
+  /** Le definitif de la session EN COURS. Le provisoire n'y entre jamais. */
+  const confirmeRef = useRef("");
+  /** La derniere transcription emise, pour la restituer en fin de dictee. */
   const derniereRef = useRef("");
   const onTexteRef = useRef(onTexte);
   onTexteRef.current = onTexte;
@@ -105,13 +113,17 @@ export function Dictee({
 
     const reco = new M();
     reco.lang = "fr-FR";
-    reco.continuous = true;
+    // `continuous` était le cœur du problème : sur Android, il fait boucler le
+    // moteur sur lui-même et relivrer des segments déjà transmis. Une session
+    // par phrase, relancée à la main, est prévisible partout.
+    reco.continuous = false;
     reco.interimResults = true;
     reco.maxAlternatives = 1;
 
     reco.onresult = (e) => {
-      // Reconstruction complète, jamais d'accumulation : c'est ce qui rend
-      // l'opération idempotente et interdit les répétitions.
+      // On sépare strictement le définitif du provisoire. Le provisoire n'est
+      // qu'un aperçu : il s'affiche, mais il ne rejoint JAMAIS le socle — le
+      // moteur va le réentendre et le confirmer, et on l'aurait deux fois.
       let definitif = "";
       let provisoire = "";
       for (let i = 0; i < e.results.length; i++) {
@@ -119,6 +131,7 @@ export function Dictee({
         if (r.isFinal) definitif = joindre(definitif, r[0].transcript);
         else provisoire = joindre(provisoire, r[0].transcript);
       }
+      confirmeRef.current = definitif;
       emettreRef.current(joindre(joindre(socleRef.current, definitif), provisoire).trim(), false);
     };
 
@@ -133,11 +146,13 @@ export function Dictee({
     };
 
     reco.onend = () => {
-      // Le moteur d'Android se coupe après quelques secondes de silence. Tant
-      // que la personne n'a pas touché le bouton, on repart — mais en gardant
-      // le déjà-dit à part, puisque ses index vont repartir de zéro.
+      // Fin de session : SEUL le définitif rejoint le socle. C'est la règle qui
+      // interdit les doublons — ce qui n'était qu'un aperçu est jeté, et la
+      // session suivante le réentendra proprement.
+      socleRef.current = joindre(socleRef.current, confirmeRef.current).trim();
+      confirmeRef.current = "";
+
       if (vouluRef.current) {
-        socleRef.current = derniereRef.current;
         try {
           reco.start();
           return;
@@ -145,8 +160,9 @@ export function Dictee({
           /* le moteur refuse de repartir : on s'arrête proprement */
         }
       }
+
       setEcoute(false);
-      if (derniereRef.current.trim()) emettreRef.current(derniereRef.current.trim(), true);
+      if (socleRef.current) emettreRef.current(socleRef.current, true);
       onFin?.();
     };
 
@@ -182,6 +198,7 @@ export function Dictee({
     }
 
     socleRef.current = "";
+    confirmeRef.current = "";
     derniereRef.current = "";
     vouluRef.current = true;
     onDebut?.();

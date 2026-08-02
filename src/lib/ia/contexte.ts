@@ -177,7 +177,7 @@ export async function nomDuSujet(userId: string, sujet: Sujet): Promise<string |
 
 /** Le bloc de contexte injecté dans la conversation, borné et compact. */
 export async function contexteCompact(userId: string, sujet: Sujet): Promise<string> {
-  const [socle, projets, taches] = await Promise.all([
+  const [socle, projets, taches, accomplies] = await Promise.all([
     // Le socle vient de la mémoire partagée : toutes les surfaces IA voient
     // exactement la même chose. Ici on n'ajoute que le cadrage de la porte.
     memoireDe(userId, "chat"),
@@ -192,6 +192,18 @@ export async function contexteCompact(userId: string, sujet: Sujet): Promise<str
       orderBy: { createdAt: "asc" },
       take: 5,
       select: { id: true, title: true, createdAt: true },
+    }),
+    // Ce qui a ete mene a terme aujourd'hui. Le bilan du soir ne peut pas
+    // demander « qu'as-tu accompli ? » quand la reponse est enregistree.
+    prisma.task.findMany({
+      where: {
+        userId,
+        deletedAt: null,
+        status: "DONE",
+        updatedAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+      },
+      orderBy: { updatedAt: "asc" },
+      select: { title: true, intentionDu: true, project: { select: { name: true } } },
     }),
   ]);
 
@@ -282,10 +294,36 @@ Déroulé, six messages maximum :
 Un schéma n'est jamais un défaut de caractère : c'est une stratégie qui a servi et qui ne sert plus. Dis-le si c'est utile. Ne prête jamais d'intention, ne psychologise pas, ne diagnostique rien.`,
     );
   } else if (sujet.type === "bilan") {
+    // Ce qui a été coché est ENREGISTRÉ. Le demander revient à avouer qu'on
+    // ne regarde pas ce qu'on nous confie.
+    const releve = accomplies.length
+      ? accomplies
+          .map(
+            (t) =>
+              `- ${t.title}${t.project ? ` (${t.project.name})` : ""}${
+                t.intentionDu ? " — c'était son essentiel du jour" : ""
+              }`,
+          )
+          .join("\n")
+      : null;
+
     l.push(
       sujet.cadence === "soir"
-        ? `\n⚠ C'est le bilan du soir. Quatre temps, courts, dans cet ordre : ce qui a été accompli (même minuscule) · ce qui a été appris · ce qui est à ajuster · le lâcher-prise (« est-ce que tu portes uniquement ce qui dépend de toi ? »). Ne culpabilise jamais une journée creuse. Termine par une intention pour demain, pas par une liste de tâches.`
-        : `\n⚠ C'est le bilan de la semaine : accomplissements, apprentissages, blocages, puis les priorités de la semaine à venir. Tu peux proposer UNE hypothèse sur un schéma que tu observes (« à toi de me dire si je lis juste »).`,
+        ? `\n⚠ C'est le bilan du soir.
+
+Ce qu'elle a mené à terme aujourd'hui — tu le SAIS, ne le lui demande jamais :
+${releve ?? "Rien n'a été coché aujourd'hui."}
+
+OUVRE en le lui rendant : nomme ce qu'elle a accompli, avec les titres exacts, et demande seulement si ça la satisfait. « Tu as fait X et Y aujourd'hui, dont ton essentiel. Est-ce que tu en es satisfait ? » — voilà l'ouverture juste. Poser « qu'as-tu accompli ? » quand la réponse est enregistrée serait avouer que tu ne regardes pas ce qu'elle te confie.
+
+Si rien n'a été coché : dis-le simplement, sans détour et sans reproche, et demande ce qui s'est passé. Une journée peut être pleine sans qu'une case soit cochée.
+
+Ensuite, trois temps courts : ce qui a été appris · ce qui est à ajuster · le lâcher-prise (« est-ce que tu portes uniquement ce qui dépend de toi ? »). Termine par une intention pour demain, pas par une liste de tâches.`
+        : `\n⚠ C'est le bilan de la semaine : accomplissements, apprentissages, blocages, puis les priorités de la semaine à venir.
+
+Ouvre par ce que tu SAIS de sa semaine — le socle ci-dessus contient ses projets, l'avancement de ses caps et ses actions. Ne lui fais pas raconter ce qui est déjà enregistré : rends-le-lui, puis demande ce que ça lui fait.
+
+Tu peux proposer UNE hypothèse sur un schéma que tu observes (« à toi de me dire si je lis juste »).`,
     );
   }
 

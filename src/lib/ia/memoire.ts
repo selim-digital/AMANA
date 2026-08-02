@@ -70,6 +70,7 @@ export async function dossier(userId: string) {
           title: true,
           status: true,
           createdAt: true,
+          updatedAt: true,
           dueAt: true,
           project: { select: { name: true } },
         },
@@ -181,6 +182,18 @@ export function rendre(d: Dossier, pour: "chat" | "plongee" = "chat"): string {
 
   const attente = d.taches.filter((t) => t.status !== "DONE");
   const faites = d.taches.filter((t) => t.status === "DONE");
+
+  // Ce qui a été mené à terme AUJOURD'HUI : toute surface qui parle en fin de
+  // journée doit le savoir, sinon elle demande ce qui est déjà enregistré.
+  const debutJour = new Date(new Date().setHours(0, 0, 0, 0));
+  const duJour = faites.filter((t) => t.updatedAt >= debutJour);
+  if (duJour.length) {
+    l.push(
+      `Ce qu'elle a mené à terme aujourd'hui (ne le lui demande pas — rends-le-lui) :\n${duJour
+        .map((t) => `- ${t.title}${t.project ? ` (${t.project.name})` : ""}`)
+        .join("\n")}`,
+    );
+  }
   if (attente.length) {
     l.push(
       `Ses actions en attente :\n${attente
