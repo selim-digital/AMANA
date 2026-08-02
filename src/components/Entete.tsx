@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { AmanaMark, Wordmark } from "@/components/AmanaMark";
 
@@ -14,6 +15,7 @@ import { AmanaMark, Wordmark } from "@/components/AmanaMark";
  */
 export function Entete() {
   const { data: session } = useSession();
+  const pathname = usePathname();
   const [ouvert, setOuvert] = useState(false);
   const zone = useRef<HTMLDivElement>(null);
   const isAdmin = session?.user?.role === "ADMIN";
@@ -38,7 +40,9 @@ export function Entete() {
   return (
     <header className="sticky top-0 z-40 flex items-center justify-between border-b border-ink/8 bg-paper/85 px-5 py-3 backdrop-blur">
       <Link href="/aujourdhui" className="flex items-center gap-2.5" aria-label="Retour aux univers">
-        <AmanaMark className="h-7 w-7" />
+        {/* La cle change avec l'ecran : la marque rejoue son eveil a chaque
+            transition, ce qui donne au changement de page un debut visible. */}
+        <AmanaMark key={pathname} eveil className="h-7 w-7" />
         <Wordmark className="text-[12px]" />
       </Link>
 

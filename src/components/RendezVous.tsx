@@ -110,7 +110,7 @@ export function RendezVous({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-3">
-          <AmanaMark className="h-10 w-10 flex-none" />
+          <AmanaMark eveil className="h-10 w-10 flex-none" />
           <div className="min-w-0 flex-1">
             <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold-deep">
               {push.titre}

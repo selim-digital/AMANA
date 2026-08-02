@@ -64,7 +64,7 @@ export function InstallPrompt() {
   return (
     <div className="sheet-enter fixed inset-x-3 bottom-24 z-50 mx-auto max-w-md rounded-[22px] border border-ink/10 bg-surface p-4 shadow-xl lg:bottom-6 lg:left-auto lg:right-6 lg:mx-0">
       <div className="flex items-start gap-3">
-        <AmanaMark className="h-10 w-10 flex-none" />
+        <AmanaMark eveil className="h-10 w-10 flex-none" />
         <div className="flex-1">
           <p className="font-semibold">Garde AMANA à portée de main</p>
           {ios ? (

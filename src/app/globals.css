@@ -336,3 +336,53 @@ main {
 @media (prefers-reduced-motion: reduce) {
   .halo { animation: none; opacity: 0; }
 }
+
+/* ─────────── L'éveil : l'entrée de la marque ───────────
+   Le carré arrive pivoté et se redresse, les points s'allument un à un,
+   puis l'or diffuse un halo. Une entrée, jamais une boucle : elle marque
+   un début — arrivée d'une modale, changement d'écran. */
+@keyframes eveil-carre {
+  0%   { transform: scale(0.86) rotate(-8deg); opacity: 0; }
+  28%  { transform: scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes eveil-point {
+  0%, 18% { opacity: 0; transform: scale(0.4); }
+  34%     { opacity: 1; transform: scale(1); }
+  100%    { opacity: 1; transform: scale(1); }
+}
+@keyframes eveil-halo {
+  0%, 30% { opacity: 0; transform: scale(0.6); }
+  46%     { opacity: 0.45; transform: scale(2.1); }
+  70%     { opacity: 0; transform: scale(2.4); }
+  100%    { opacity: 0; transform: scale(2.4); }
+}
+
+.eveil {
+  animation: eveil-carre 1.15s var(--ease-out) both;
+  transform-origin: 100px 100px;
+}
+.eveil .pt1,
+.eveil .pt2,
+.eveil .pt3 {
+  animation: eveil-point 1.15s var(--ease-out) both;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+.eveil .pt2 { animation-delay: 0.09s; }
+.eveil .pt3 { animation-delay: 0.18s; }
+.eveil .halo-or {
+  animation: eveil-halo 1.4s var(--ease-out) both;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+/* Sans l'éveil, le halo n'existe pas : il doublerait le point d'or. */
+svg:not(.eveil) > .halo-or { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .eveil,
+  .eveil .pt1,
+  .eveil .pt2,
+  .eveil .pt3 { animation: none; opacity: 1; transform: none; }
+  .eveil .halo-or { display: none; }
+}

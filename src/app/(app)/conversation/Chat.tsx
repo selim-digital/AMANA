@@ -155,17 +155,42 @@ export function Chat({
     if (fileRef.current) fileRef.current.value = "";
   }
 
+  // On revient a l'univers d'ou l'on vient : le projet mene a Build, la
+  // plongee et les etapes a La Source, les bilans a Align.
+  const retour = projetLie
+    ? `/projet/${projetLie.id}`
+    : sujet.mode === "bilan" || sujet.mode === "bilan-semaine" || sujet.mode === "blocage"
+      ? "/aujourdhui?u=align"
+      : sujet.etape
+        ? "/aujourdhui?u=source"
+        : "/aujourdhui?u=build";
+
   const derniere = messages[messages.length - 1];
   const proposition =
     derniere?.role === "assistant" && !busy ? actionProposee(derniere.content) : null;
 
   return (
-    <div className="flex h-[calc(100dvh-9rem)] flex-col lg:h-[calc(100dvh-3rem)]">
+    <div className="flex h-[calc(100dvh-3.5rem)] flex-col">
       <header className="flex items-center gap-3 border-b border-ink/10 px-5 py-3">
+        {/* Sans cette porte, on entrait dans un échange sans pouvoir en
+            ressortir : il n'y a plus de menu pour rattraper. */}
+        <Link
+          href={retour}
+          aria-label="Revenir à l'univers"
+          className="press flex h-9 w-9 flex-none items-center justify-center rounded-full border border-ink/15 text-ink-soft"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+        </Link>
+
         <div className="min-w-0 flex-1">
           <h1 className="voice-amana text-lg leading-tight">{cadrage.titre}</h1>
           {projetLie ? (
-            <Link href="/projets" className="truncate text-xs font-semibold text-gold-deep hover:underline">
+            <Link
+              href={`/projet/${projetLie.id}`}
+              className="truncate text-xs font-semibold text-gold-deep hover:underline"
+            >
               {projetLie.name} →
             </Link>
           ) : (
