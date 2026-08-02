@@ -72,7 +72,6 @@ export async function saveOnboarding(input: OnboardingInput) {
     porte: input.porte,
   });
 
-  revalidatePath("/aujourdhui");
 }
 
 // ─────────────────────────── Décharge mentale ───────────────────────────
@@ -154,7 +153,6 @@ export async function commitDecharge(projets: ProjetPropose[], taches: TacheProp
     projets: projets.length,
     taches: taches.length,
   });
-  revalidatePath("/aujourdhui");
   revalidatePath("/projets");
   revalidatePath("/chemin");
 }
@@ -171,7 +169,6 @@ export async function toggleTask(taskId: string) {
     data: { status: done ? "DONE" : "TODO" },
   });
   if (done) await logEvent(userId, "task_done", {});
-  revalidatePath("/aujourdhui");
 }
 
 // ─────────────────────────── Depuis la conversation ───────────────────────────
@@ -199,7 +196,6 @@ export async function creerActionDepuisChat(
     },
   });
   await logEvent(userId, "task_created", { source: "conversation", quand });
-  revalidatePath("/aujourdhui");
   revalidatePath("/projets");
 }
 
@@ -219,7 +215,6 @@ export async function repondreProfil(cle: "disc" | "wpmot" | "ego", questionId: 
     data: { [cle]: maj as Prisma.InputJsonValue },
   });
   await logEvent(userId, "profil_reponse", { instrument: cle, question: questionId });
-  revalidatePath("/aujourdhui");
   revalidatePath("/profil");
 }
 
@@ -261,7 +256,6 @@ export async function updateProject(p: ProjetMaj) {
   });
   await logEvent(userId, "project_updated", { status: p.status });
   revalidatePath("/projets");
-  revalidatePath("/aujourdhui");
   revalidatePath("/chemin");
 }
 
@@ -272,7 +266,6 @@ export async function deleteProject(id: string) {
   await prisma.project.update({ where: { id }, data: { deletedAt: new Date() } });
   await logEvent(userId, "project_deleted", {});
   revalidatePath("/projets");
-  revalidatePath("/aujourdhui");
   revalidatePath("/chemin");
 }
 
@@ -356,7 +349,6 @@ export async function marquerNotificationLue(id: string) {
     where: { id, userId },
     data: { readAt: new Date() },
   });
-  revalidatePath("/aujourdhui");
 }
 
 /** Couper ou rétablir les rappels par email. */
@@ -388,7 +380,6 @@ export async function definirObjectifsAnnee(objectifs: { label: string; why?: st
   });
 
   await logEvent(userId, "annual_goals_set", { year, n: objectifs.length });
-  revalidatePath("/aujourdhui");
 }
 
 /** Pose un cap trimestriel sur un projet : un objectif, jusqu'à 3 résultats clés. */
@@ -423,7 +414,6 @@ export async function definirOkr(
 
   await logEvent(userId, "okr_defined", { projectId, period });
   revalidatePath("/projets");
-  revalidatePath("/aujourdhui");
 }
 
 /** Le point de la semaine sur un résultat clé. */
@@ -455,7 +445,6 @@ export async function decalerProjet(projectId: string) {
   });
   await logEvent(userId, "project_postponed", { projectId, raison: "sans_okr" });
   revalidatePath("/projets");
-  revalidatePath("/aujourdhui");
 }
 
 // ─────────────────────────── Compte ───────────────────────────
@@ -584,7 +573,6 @@ export async function definirIntention(texte: string) {
     });
     await logEvent(userId, "intention_definie", {});
   }
-  revalidatePath("/aujourdhui");
 }
 
 /**
@@ -637,7 +625,6 @@ export async function enregistrerPosition(lat: number, lng: number, ville?: stri
       ville: ville?.trim() || null,
     },
   });
-  revalidatePath("/aujourdhui");
 }
 
 /** Convention de calcul et école pour l'Asr — ce sont ses choix, pas les nôtres. */
@@ -698,7 +685,6 @@ export async function definirRegles(labels: string[]) {
   }
 
   await logEvent(userId, "regles_definies", { nombre: propres.length });
-  revalidatePath("/aujourdhui");
 }
 
 /** Tenue ou non, aujourd'hui. Un second appel revient en arrière. */
@@ -718,7 +704,6 @@ export async function basculerRegle(regleId: string) {
     await prisma.regleSuivi.create({ data: { regleId, jour, tenue: true } });
     await logEvent(userId, "regle_tenue", { regleId });
   }
-  revalidatePath("/aujourdhui");
 }
 
 // ─────────────────────────── Corriger une action ───────────────────────────
@@ -736,7 +721,6 @@ export async function renommerTache(taskId: string, titre: string) {
   const propre = titre.trim();
   if (propre.length < 2 || propre.length > 200) return;
   await prisma.task.updateMany({ where: { id: taskId, userId }, data: { title: propre } });
-  revalidatePath("/aujourdhui");
 }
 
 /** Écarter une action. Suppression douce : elle sort des vues, pas de l'histoire. */
@@ -747,7 +731,6 @@ export async function supprimerTache(taskId: string) {
     data: { deletedAt: new Date() },
   });
   await logEvent(userId, "task_deleted", {});
-  revalidatePath("/aujourdhui");
 }
 
 /** Rattacher une action à un projet, ou l'en détacher. */
@@ -758,5 +741,4 @@ export async function rattacherTache(taskId: string, projectId: string | null) {
     if (!p) return;
   }
   await prisma.task.updateMany({ where: { id: taskId, userId }, data: { projectId } });
-  revalidatePath("/aujourdhui");
 }

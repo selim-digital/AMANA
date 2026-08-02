@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { definirIntention, toggleTask } from "@/lib/actions";
 
 /**
@@ -20,6 +21,7 @@ export function Intention({
   const [edition, setEdition] = useState(false);
   const [coche, setCoche] = useState(intention?.done ?? false);
   const [encours, demarrer] = useTransition();
+  const router = useRouter();
 
   // ── Pas encore d'intention : on la demande, et on attend la réponse ──
   if (!intention || edition) {
@@ -38,7 +40,11 @@ export function Intention({
             if (!v.trim()) return;
             setSaisie("");
             setEdition(false);
-            demarrer(() => void definirIntention(v));
+            // router.refresh() refait la page a l'URL COURANTE, ?u= compris.
+            demarrer(async () => {
+              await definirIntention(v);
+              router.refresh();
+            });
           }}
           className="mt-4 flex flex-col gap-2.5 sm:flex-row"
         >
@@ -97,7 +103,10 @@ export function Intention({
         type="button"
         onClick={() => {
           setCoche((c) => !c);
-          demarrer(() => void toggleTask(intention.id));
+          demarrer(async () => {
+            await toggleTask(intention.id);
+            router.refresh();
+          });
         }}
         className="press mt-3 flex w-full items-start gap-4 text-left"
       >
