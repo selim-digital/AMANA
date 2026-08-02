@@ -1,7 +1,6 @@
 import "server-only";
 import { tool } from "ai";
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import type { ProjectStatus } from "@prisma/client";
 
@@ -278,10 +277,6 @@ export function outilsEspace(userId: string) {
             ressenti: ressenti.trim() || null,
           },
         });
-
-        // Sans cela, l'écran d'Align resterait sur sa version d'avant : la
-        // personne verrait « à faire » ce qu'elle vient de faire.
-        revalidatePath("/aujourdhui");
 
         return quand === "soir"
           ? "Journée close et enregistrée. Elle apparaît maintenant comme faite dans Align. Dis-le-lui en une phrase, sans détailler."
