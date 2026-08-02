@@ -432,3 +432,38 @@ svg:not(.eveil) > .halo-or { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .voile-passage { display: none; }
 }
+
+/* ─────────── Ce qui attend un geste ───────────
+   Deux mouvements qui ne se marchent pas dessus : le souleve ne touche que
+   `transform`, la respiration que le fond et l'ombre. Le premier joue une
+   fois a l'arrivee — la carte se rappelle a soi — puis la seconde prend le
+   relais et ne s'arrete plus. */
+@keyframes carte-souleve {
+  0%   { transform: translateY(0); }
+  45%  { transform: translateY(-6px); }
+  75%  { transform: translateY(1px); }
+  100% { transform: translateY(0); }
+}
+@keyframes carte-respire {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(194, 160, 92, 0); }
+  45%      { box-shadow: 0 0 0 4px rgba(194, 160, 92, 0.18); }
+}
+
+.appelle {
+  animation:
+    carte-souleve 900ms var(--ease-out) 400ms 1 both,
+    carte-respire 2600ms var(--ease-out) 1400ms infinite;
+}
+/* La pastille du haut gonfle avec la carte : c'est elle qu'on doit lire. */
+.appelle .pastille-attente {
+  animation: carte-point 2600ms var(--ease-out) 1400ms infinite;
+}
+@keyframes carte-point {
+  0%, 100% { transform: scale(1); }
+  45%      { transform: scale(1.5); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .appelle,
+  .appelle .pastille-attente { animation: none; }
+}
