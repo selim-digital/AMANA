@@ -124,7 +124,12 @@ export function Frise({ etapes }: { etapes: EtapeFrise[] }) {
         {etapes.map((e, i) => {
           const actif = ouvert === i;
           return (
-            <li key={`${e.titre}-${i}`} className="relative pl-9">
+            <li
+              key={`${e.titre}-${i}`}
+              className={`relative rounded-[14px] pl-9 ${
+                e.etat === "actuel" ? "appelle bg-[#FBF6EA] pr-3" : ""
+              }`}
+            >
               <button
                 type="button"
                 onClick={() => setOuvert(actif ? null : i)}
