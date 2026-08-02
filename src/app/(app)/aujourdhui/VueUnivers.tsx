@@ -63,10 +63,12 @@ export function VueUnivers({
 
 /** Les objets de l'univers, en rangée qui défile — on les balaie du pouce. */
 export function RangeeObjets({ libelle, objets }: { libelle: string; objets: Objet[] }) {
+  // Ce qui reste a renseigner doit se voir : c'est la qu'un geste est
+  // attendu. Un fond chaud, un liseret dore, et le mouvement par-dessus.
   const teinte = {
     fait: "border-gold/45 bg-gold-soft",
     encours: "border-ink/15 bg-surface",
-    vide: "border-dashed border-ink/20 bg-surface-2/50",
+    vide: "border-gold/40 bg-[#FBF6EA]",
   } as const;
 
   return (
@@ -79,12 +81,14 @@ export function RangeeObjets({ libelle, objets }: { libelle: string; objets: Obj
           <a
             key={o.id}
             href={o.href}
-            className={`press lift flex w-40 flex-none flex-col rounded-[18px] border p-4 ${teinte[o.etat]}`}
+            className={`press lift flex w-40 flex-none flex-col rounded-[18px] border p-4 ${teinte[o.etat]} ${
+              o.etat === "vide" ? "appelle" : ""
+            }`}
           >
             <span className="flex items-center gap-1.5">
               <span
                 className={`h-1.5 w-1.5 flex-none rounded-full ${
-                  o.etat === "fait" ? "bg-gold" : o.etat === "encours" ? "bg-ink/40" : "bg-ink/15"
+                  o.etat === "fait" ? "bg-gold" : o.etat === "encours" ? "bg-ink/40" : "bg-gold pastille-attente"
                 }`}
               />
               <span className="min-w-0 truncate text-sm font-semibold">{o.titre}</span>
