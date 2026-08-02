@@ -357,7 +357,7 @@ export function Chat({
           e.preventDefault();
           send(input);
         }}
-        className="flex gap-2 border-t border-ink/10 px-4 py-3"
+        className="flex min-w-0 items-center gap-1.5 border-t border-ink/10 px-3 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
       >
         <input
           ref={fileRef}
@@ -384,7 +384,7 @@ export function Chat({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Écris ou dicte…"
-          className="flex-1 rounded-full border border-ink/15 bg-surface px-5 py-3 text-sm outline-none transition-colors focus:border-gold"
+          className="min-w-0 flex-1 rounded-full border border-ink/15 bg-surface px-4 py-3 text-sm outline-none transition-colors focus:border-gold"
         />
         <button
           type="submit"

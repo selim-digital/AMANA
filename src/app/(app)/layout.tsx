@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getProfile } from "@/lib/data";
 import { Entete } from "@/components/Entete";
 import { Ouverture } from "@/components/Ouverture";
+import { Transition } from "@/components/Transition";
 import { InstallPrompt } from "@/components/InstallPrompt";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -17,6 +19,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="min-h-dvh overflow-x-hidden">
       {/* La marque s'eveille au lancement, une fois par session. */}
       <Ouverture />
+      {/* Le passage d'un ecran a l'autre : la marque s'eveille au centre. */}
+      <Suspense fallback={null}>
+        <Transition />
+      </Suspense>
       {/* Plus de menu : on entre par les univers, tout se fait a l'interieur
           de celui ou l'on est. Ne reste que la marque et l'initiale. */}
       <Entete />

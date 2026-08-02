@@ -90,7 +90,7 @@ export function cadrageClient(sujet: Sujet, nom?: string) {
         titre: "Où tu en es",
         sousTitre: nom ?? "Ce trimestre",
         ouverture: "Reprenons tes résultats clés, un par un. Réponds comme ça vient.",
-        amorces: ["Ça n'a pas bougé", "J'ai avancé mais je ne sais pas chiffrer", "Guide-moi"],
+        amorces: ["Ça n'a pas bougé", "J'ai avancé mais je ne sais pas chiffrer", "Accompagne-moi"],
       };
     case "blocage":
       return {
@@ -125,7 +125,7 @@ export function cadrageClient(sujet: Sujet, nom?: string) {
           sujet.cadence === "soir"
             ? "Qu'est-ce que tu as accompli aujourd'hui, même petit ?"
             : "Regardons ta semaine. Qu'est-ce qui a avancé ?",
-        amorces: ["Peu de choses, honnêtement", "Beaucoup, mais je suis fatigué", "Guide-moi"],
+        amorces: ["Peu de choses, honnêtement", "Beaucoup, mais je suis fatigué", "Accompagne-moi"],
       };
     default:
       return {
@@ -254,7 +254,9 @@ Ne culpabilise à aucun moment. La procrastination est un signal, pas un défaut
     l.push(
       `\n⚠ Elle vient dire où elle en est sur le cap de « ${p?.name ?? "son projet"} ».
 
-Commence par « lire_cap » : ne redemande JAMAIS un chiffre déjà enregistré.
+Commence par « lire_cap ». Il te donne les chiffres actuels ET les actions qu'elle a terminées sur ce projet depuis trois semaines. Ne redemande JAMAIS un chiffre déjà enregistré.
+
+DÉDUIS AVANT DE DEMANDER. Si une action accomplie fait manifestement avancer un résultat clé — « Envoyer les invitations » quand le résultat est « 12 entretiens » — propose toi-même le chiffre : « Tu as fait X et Y, je mets ce résultat à 40 % — je me trompe ? ». Elle n'a qu'à corriger. Ne pose la question à blanc que pour les résultats qu'aucune action ne renseigne.
 
 Puis reprends ses résultats clés UN PAR UN, dans l'ordre. Pour chacun :
 - demande un ÉTAT, jamais un pourcentage : « combien d'entretiens as-tu faits ? », pas « tu es à combien de pour cent ? ». Personne ne pense en pourcentage.

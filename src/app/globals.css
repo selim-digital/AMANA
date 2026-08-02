@@ -418,3 +418,17 @@ svg:not(.eveil) > .halo-or { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .onde { animation: none; opacity: 0; }
 }
+
+/* Le voile de passage : il couvre puis se retire, sans jamais s'attarder. */
+@keyframes voile-passage {
+  0%   { opacity: 0; }
+  22%  { opacity: 1; }
+  62%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+.voile-passage {
+  animation: voile-passage 520ms var(--ease-out) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .voile-passage { display: none; }
+}
