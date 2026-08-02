@@ -28,9 +28,14 @@ export function Notifications({ notifs }: { notifs: Notif[] }) {
       {visibles.map((n) => (
         <div
           key={n.id}
-          className="step-enter flex items-start gap-3 rounded-[18px] border border-gold/30 bg-surface p-4"
+          className="step-enter relative flex items-start gap-3 overflow-hidden rounded-[18px] border-2 border-gold/60 bg-gold-soft p-4 shadow-sm"
         >
-          <span className="mt-1 h-2 w-2 flex-none rounded-full bg-gold" />
+          {/* Une notification non lue doit accrocher l'oeil : la pastille
+              respire tant qu'on ne l'a pas traitee. */}
+          <span className="relative mt-1 flex h-2.5 w-2.5 flex-none items-center justify-center">
+            <span className="halo absolute inset-0 rounded-full bg-gold-deep" aria-hidden />
+            <span className="relative h-2.5 w-2.5 rounded-full bg-gold-deep" />
+          </span>
           <div className="flex-1">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gold-deep">
               {n.title}

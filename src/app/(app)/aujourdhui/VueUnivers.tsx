@@ -204,7 +204,7 @@ export function Frise({ etapes }: { etapes: EtapeFrise[] }) {
 }
 
 /** Ce qui reste à faire ici, et rien d'autre. */
-function Actions({ actions, cochable }: { actions: ActionVue[]; cochable: boolean }) {
+export function Actions({ actions, cochable }: { actions: ActionVue[]; cochable: boolean }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [coche, setCoche] = useState<string | null>(null);

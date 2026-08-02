@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { getDashboard, getRegles } from "@/lib/data";
 import { Intention } from "./Intention";
 import { ObjectifsAnnee } from "./ObjectifsAnnee";
+import { Notifications } from "./Notifications";
 import { Regles } from "./Regles";
 import { questionsRestantes } from "@/lib/coaching/profils";
 import {
@@ -14,7 +15,7 @@ import {
   type CleUnivers,
 } from "@/lib/univers";
 import { BandeauUnivers, type VueUnivers } from "./Univers";
-import { Frise, RangeeObjets } from "./VueUnivers";
+import { Actions, Frise, RangeeObjets } from "./VueUnivers";
 import { Outil } from "./Outil";
 import { ProjetsBuild } from "./ProjetsBuild";
 import { Deck } from "./Deck";
@@ -39,7 +40,7 @@ export default async function DashboardPage({
   const params = await searchParams;
   const session = await auth();
   const userId = session!.user.id;
-  const { user, profile, intention, projects, objectifsAnnee, bloquee, projetsTotal, dormants } =
+  const { user, profile, intention, projects, objectifsAnnee, notifications, bloquee, projetsTotal, dormants } =
     await getDashboard(userId);
 
   // On atterrit dans un univers — celui choisi, ou celui qui porte le plus
@@ -131,6 +132,13 @@ export default async function DashboardPage({
 
       <BandeauUnivers univers={vues} actif={actif} />
 
+      {/* Transverses : une notification ne depend pas de l'univers ou l'on est. */}
+      {notifications.length > 0 && (
+        <Notifications
+          notifs={notifications.map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href }))}
+        />
+      )}
+
       {/* ─────────── La Source : le chemin, et la plongée ─────────── */}
       {actif === "source" && (
         <>
@@ -166,6 +174,12 @@ export default async function DashboardPage({
                 : null
             }
           />
+          {/* Ce qui reste a mener aujourd'hui. Son absence etait un oubli :
+              l'intention demandait une nouvelle action sans jamais montrer
+              celles qui attendaient deja. */}
+          {contenu.actions.length > 0 && (
+            <Actions actions={contenu.actions} cochable />
+          )}
           <ProjetsBuild actifs={lignesProjets} autres={autresProjets} />
           <Outil
             nom="Le déprocrastinateur"
