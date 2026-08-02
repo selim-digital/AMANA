@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { creerActionDepuisChat } from "@/lib/actions";
 import { Dictee } from "@/components/Dictee";
+import { AmanaMark } from "@/components/AmanaMark";
 import { preparerFichier, type PieceJointe } from "@/lib/fichiers";
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -288,16 +289,10 @@ export function Chat({
             }`}
           >
             {m.content || (
-              <span className="inline-flex items-center gap-2">
-                <span className="inline-flex gap-1">
-                  {[0, 0.2, 0.4].map((d) => (
-                    <span
-                      key={d}
-                      className="nudge inline-block h-1.5 w-1.5 rounded-full bg-ink-faint"
-                      style={{ animationDelay: `${d}s` }}
-                    />
-                  ))}
-                </span>
+              <span className="inline-flex items-center gap-2.5">
+                {/* La marque cherche : le point d'or fait le tour, le carre
+                    s'incline. Trois points gris ne disaient pas qui reflechit. */}
+                <AmanaMark className="reflechit h-6 w-6 flex-none" />
                 {/* Une attente muette inquiète : au-delà de six secondes, on dit
                     ce qui se passe. */}
                 {attenteLongue && (

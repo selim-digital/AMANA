@@ -179,7 +179,13 @@ export async function evenements(userId: string): Promise<Evenement[]> {
   const faitesAujourdhui = await prisma.task.count({
     where: { userId, deletedAt: null, status: "DONE", updatedAt: { gte: debutJour } },
   });
-  if (faitesAujourdhui > 0 && new Date().getHours() >= 18) {
+  // Une journée déjà close ne se redemande pas : c'est ce qui manquait, et
+  // qui faisait qu'Align semblait ignorer ce qu'on venait d'y faire.
+  const closJour = await prisma.bilan.findFirst({
+    where: { userId, jour: { gte: debutJour }, cadence: "soir" },
+    select: { id: true },
+  });
+  if (faitesAujourdhui > 0 && new Date().getHours() >= 18 && !closJour) {
     e.push({
       univers: "align",
       motif: `${faitesAujourdhui} action${faitesAujourdhui > 1 ? "s" : ""} accomplie${faitesAujourdhui > 1 ? "s" : ""} aujourd'hui — à clore`,
@@ -187,11 +193,17 @@ export async function evenements(userId: string): Promise<Evenement[]> {
     });
   }
   if (new Date().getDay() === 0) {
-    e.push({
-      univers: "align",
-      motif: "C'est dimanche : le bilan de la semaine t'attend",
-      href: "/conversation?mode=bilan-semaine",
+    const closSemaine = await prisma.bilan.findFirst({
+      where: { userId, jour: { gte: debutJour }, cadence: "semaine" },
+      select: { id: true },
     });
+    if (!closSemaine) {
+      e.push({
+        univers: "align",
+        motif: "C'est dimanche : le bilan de la semaine t'attend",
+        href: "/conversation?mode=bilan-semaine",
+      });
+    }
   }
   if (notifs > 0) {
     e.push({
@@ -391,23 +403,38 @@ export async function contenuUnivers(
     const dimanche = new Date().getDay() === 0;
     const soir = new Date().getHours() >= 18;
 
+    // Ce qui est clos doit se voir clos. Sans cette lecture, la carte
+    // proposait encore de faire ce qui venait d'être fait.
+    const [closJour, closSemaine] = await Promise.all([
+      prisma.bilan.findFirst({
+        where: { userId, jour: { gte: debutJour }, cadence: "soir" },
+        select: { accompli: true, ressenti: true },
+      }),
+      prisma.bilan.findFirst({
+        where: { userId, jour: { gte: debutJour }, cadence: "semaine" },
+        select: { id: true },
+      }),
+    ]);
+
     return {
       libelleObjets: "Tes bilans",
       objets: [
         {
           id: "soir",
           titre: "Bilan du soir",
-          detail: faites
-            ? faites + " action" + (faites > 1 ? "s" : "") + " accomplie" + (faites > 1 ? "s" : "") + " aujourd'hui"
-            : "Rien de coché aujourd'hui",
-          etat: soir && faites ? "encours" : "vide",
+          detail: closJour
+            ? `Journée close${closJour.ressenti ? ` — ${closJour.ressenti}` : ""}`
+            : faites
+              ? faites + " action" + (faites > 1 ? "s" : "") + " accomplie" + (faites > 1 ? "s" : "") + " aujourd'hui"
+              : "Rien de coché aujourd'hui",
+          etat: closJour ? "fait" : soir && faites ? "encours" : "vide",
           href: "/conversation?mode=bilan",
         },
         {
           id: "semaine",
           titre: "Bilan de la semaine",
-          detail: dimanche ? "C'est aujourd'hui" : "Le dimanche",
-          etat: dimanche ? "encours" : "vide",
+          detail: closSemaine ? "Semaine close" : dimanche ? "C'est aujourd'hui" : "Le dimanche",
+          etat: closSemaine ? "fait" : dimanche ? "encours" : "vide",
           href: "/conversation?mode=bilan-semaine",
         },
         {

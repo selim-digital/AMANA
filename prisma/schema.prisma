@@ -45,6 +45,7 @@ model User {
   deepDives DeepDiveSession[]
   regles        Regle[]
   abonnements   Abonnement[]
+  bilans        Bilan[]
 }
 
 model Account {
@@ -459,4 +460,27 @@ model Abonnement {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+/// Une journée close, ou une semaine. C'est la trace qui manquait : sans elle,
+/// la conversation de bilan parlait sans rien inscrire, et l'application ne
+/// pouvait pas savoir que la journée avait été rendue.
+model Bilan {
+  id        String   @id @default(cuid())
+  userId    String
+  /// Jour du bilan, a minuit. Un seul par jour et par cadence.
+  jour      DateTime
+  cadence   String // "soir" | "semaine"
+  accompli  String?
+  appris    String?
+  ajuster   String?
+  lacher    String?
+  /// Ce qu'elle en dit : satisfaite, mitigee, insatisfaite.
+  ressenti  String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jour, cadence])
+  @@index([userId, jour])
 }
