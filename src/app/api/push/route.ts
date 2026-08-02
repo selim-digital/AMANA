@@ -85,6 +85,28 @@ export async function POST(req: Request) {
   const evts = await evenements(userId);
   const compte = pastilles(evts);
 
+  // ── Le budget du jour ──
+  //
+  // Cinq créneaux ne veulent pas dire cinq messages. AMANA n'en prend que
+  // DEUX au maximum : les trois autres passent en silence, et c'est ce
+  // silence qui donne du poids aux deux qui restent. Une application qui
+  // parle dix fois par jour se fait couper le son.
+  const debutJour = new Date(new Date().setHours(0, 0, 0, 0));
+  const dejaParle = await prisma.notification.count({
+    where: { userId, kind: "rendez_vous", createdAt: { gte: debutJour } },
+  });
+  if (dejaParle >= 2) return NextResponse.json({ push: null, raison: "budget" });
+
+  // On ne parle pas pour parler : sans rien en attente, le créneau passe.
+  const enAttente = evts.length;
+  if (!enAttente) return NextResponse.json({ push: null, raison: "rien" });
+
+  // Le second message de la journée exige davantage : on ne redit pas la
+  // même chose à deux heures d'intervalle pour une broutille.
+  if (dejaParle === 1 && enAttente < 2) {
+    return NextResponse.json({ push: null, raison: "trop mince" });
+  }
+
   // L'univers qui porte le plus d'attente donne le ton du message.
   const cible = (Object.keys(compte) as CleUnivers[]).sort((a, b) => compte[b] - compte[a])[0];
   const nomPriere = creneau.split("-").pop() as NomPriere;

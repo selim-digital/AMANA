@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DesertScene, ForestScene, OceanScene } from "@/components/Scenes";
 import { Pastille } from "@/components/Pastille";
@@ -47,39 +47,8 @@ export function Deck({
   const [drag, setDrag] = useState(false);
   const [sortie, setSortie] = useState(0);
   const [fige, setFige] = useState(false);
-  const [orientation, setOrientation] = useState<string | null>(null);
   const x0 = useRef(0);
   const n = cartes.length;
-
-  // L'orientation coûte un appel : une fois par jour, et jamais avant que le
-  // paysage soit à l'écran.
-  useEffect(() => {
-    const jour = new Date().toISOString().slice(0, 10);
-    const cle = `amana.orientation.${jour}`;
-    try {
-      const gardee = localStorage.getItem(cle);
-      if (gardee) {
-        setOrientation(gardee);
-        return;
-      }
-    } catch {
-      /* sans stockage local, on redemandera : ce n'est pas grave */
-    }
-    fetch("/api/orientation", { method: "POST" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (!d?.texte) return;
-        setOrientation(d.texte);
-        try {
-          localStorage.setItem(cle, d.texte);
-        } catch {
-          /* idem */
-        }
-      })
-      .catch(() => {
-        /* l'app reste utilisable sans orientation */
-      });
-  }, []);
 
   function onDown(e: React.PointerEvent) {
     setDrag(true);
@@ -217,9 +186,14 @@ export function Deck({
           ))}
         </div>
 
-        {orientation && devant.cle === conseille && (
-          <p className="step-enter rounded-[16px] border-l-[3px] border-gold bg-surface-2 px-4 py-3 text-[13px] leading-relaxed text-ink-soft">
-            {orientation}
+        {/* Ce qui attend dans le monde presente : calcule, jamais ecrit par
+            le modele. Un appel par jour pour deux phrases descriptives etait
+            un cout sans contrepartie. */}
+        {devant.motifs.length > 0 && (
+          <p className="rounded-[16px] border-l-[3px] border-gold bg-surface-2 px-4 py-3 text-[13px] leading-relaxed text-ink-soft">
+            <b className="font-semibold text-ink">{devant.motifs[0]}</b>
+            {devant.motifs.length > 1 &&
+              ` — et ${devant.motifs.length - 1} autre${devant.motifs.length > 2 ? "s" : ""} ici.`}
           </p>
         )}
       </div>

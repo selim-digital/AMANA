@@ -44,6 +44,7 @@ model User {
   notifications Notification[]
   deepDives DeepDiveSession[]
   regles        Regle[]
+  abonnements   Abonnement[]
 }
 
 model Account {
@@ -441,4 +442,21 @@ model RegleSuivi {
 
   @@unique([regleId, jour])
   @@index([regleId, jour])
+}
+
+/// Un appareil abonne aux notifications poussees. Une personne peut en avoir
+/// plusieurs — telephone, ordinateur — et chacun a sa propre cle.
+model Abonnement {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  /// Dernier envoi refuse : au bout de plusieurs, l'abonnement est retire.
+  echecs    Int      @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

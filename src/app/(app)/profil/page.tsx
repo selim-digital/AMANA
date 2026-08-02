@@ -3,6 +3,7 @@ import { getProfile } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
 import { AccountActions } from "./AccountActions";
 import { Valeurs } from "./Valeurs";
+import { ActiverPush } from "@/components/ActiverPush";
 
 export default async function ProfilPage() {
   const session = await auth();
@@ -46,6 +47,10 @@ export default async function ProfilPage() {
       </section>
 
       <Valeurs valeurs={valeurs} />
+
+      {/* On ne demande jamais la permission a l'arrivee : un refus est
+          definitif, le navigateur ne redemande plus. */}
+      <ActiverPush clePublique={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
 
       <section className="rounded-[22px] bg-surface p-5">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
