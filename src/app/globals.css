@@ -467,3 +467,40 @@ svg:not(.eveil) > .halo-or { display: none; }
   .appelle,
   .appelle .pastille-attente { animation: none; }
 }
+
+/* La barre de défilement du fil : fine et dorée. Une barre grise épaisse
+   ramène à un navigateur ; celle-ci appartient à la marque. */
+.scroll-soft {
+  scrollbar-color: color-mix(in srgb, var(--gold) 55%, transparent) transparent;
+}
+.scroll-soft::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.scroll-soft::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-soft::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--gold) 50%, transparent);
+  border-radius: 99px;
+}
+.scroll-soft:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--gold) 80%, transparent);
+}
+
+/* La marque pendant que l'IA cherche : le point d'or fait le tour, le carré
+   s'incline à peine. On sait que quelque chose se fait, sans compte à rebours. */
+@keyframes reflechit-tour {
+  to { transform: rotate(360deg); }
+}
+@keyframes reflechit-pose {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(-5deg); }
+}
+.reflechit { animation: reflechit-pose 3.2s var(--ease-out) infinite; transform-origin: 100px 100px; }
+.reflechit .pt3 { animation: reflechit-tour 3.2s linear infinite; transform-origin: 100px 100px; }
+.reflechit .halo-or { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reflechit, .reflechit .pt3 { animation: none; }
+}

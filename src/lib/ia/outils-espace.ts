@@ -1,6 +1,7 @@
 import "server-only";
 import { tool } from "ai";
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import type { ProjectStatus } from "@prisma/client";
 
@@ -228,6 +229,65 @@ export function outilsEspace(userId: string) {
     }),
 
 
+
+    /**
+     * Clore la journée — ou la semaine.
+     *
+     * C'était le maillon manquant : la conversation de bilan parlait sans rien
+     * inscrire. On la refaisait donc indéfiniment, et l'application ne pouvait
+     * pas savoir que la journée avait été rendue.
+     *
+     * À appeler à la FIN du bilan, une fois les quatre temps parcourus. Ce qui
+     * est écrit ici nourrit les bilans de semaine et de mois.
+     */
+    clore_bilan: tool({
+      description:
+        "Enregistre le bilan une fois les quatre temps parcourus (accompli, appris, à ajuster, lâcher-prise). À appeler À LA FIN du bilan, jamais au début. Reprends ses mots à elle, pas les tiens.",
+      inputSchema: z.object({
+        cadence: z.string().describe("« soir » ou « semaine »"),
+        accompli: z.string().describe("Ce qui a été mené à terme, dans ses mots"),
+        appris: z.string().describe("Ce qu'elle en retient, ou chaîne vide"),
+        ajuster: z.string().describe("Ce qu'elle veut changer, ou chaîne vide"),
+        lacher: z.string().describe("Ce qu'elle accepte de ne pas porter, ou chaîne vide"),
+        ressenti: z
+          .string()
+          .describe("« satisfaite », « mitigee » ou « insatisfaite » — d'après ce qu'elle a dit"),
+      }),
+      execute: async ({ cadence, accompli, appris, ajuster, lacher, ressenti }) => {
+        const jour = new Date();
+        jour.setHours(0, 0, 0, 0);
+        const quand = cadence.toLowerCase().includes("semaine") ? "semaine" : "soir";
+
+        await prisma.bilan.upsert({
+          where: { userId_jour_cadence: { userId, jour, cadence: quand } },
+          create: {
+            userId,
+            jour,
+            cadence: quand,
+            accompli: accompli.trim() || null,
+            appris: appris.trim() || null,
+            ajuster: ajuster.trim() || null,
+            lacher: lacher.trim() || null,
+            ressenti: ressenti.trim() || null,
+          },
+          update: {
+            accompli: accompli.trim() || null,
+            appris: appris.trim() || null,
+            ajuster: ajuster.trim() || null,
+            lacher: lacher.trim() || null,
+            ressenti: ressenti.trim() || null,
+          },
+        });
+
+        // Sans cela, l'écran d'Align resterait sur sa version d'avant : la
+        // personne verrait « à faire » ce qu'elle vient de faire.
+        revalidatePath("/aujourdhui");
+
+        return quand === "soir"
+          ? "Journée close et enregistrée. Elle apparaît maintenant comme faite dans Align. Dis-le-lui en une phrase, sans détailler."
+          : "Semaine close et enregistrée. Dis-le-lui en une phrase.";
+      },
+    }),
     lire_cap: tool({
       description:
         "Lit le cap du trimestre d'un projet et l'avancement de chacun de ses résultats clés. À appeler AVANT de demander où elle en est, pour ne jamais redemander un chiffre déjà connu.",

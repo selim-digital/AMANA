@@ -337,12 +337,18 @@ OUVRE en le lui rendant : nomme ce qu'elle a accompli, avec les titres exacts, e
 
 Si rien n'a été coché : dis-le simplement, sans détour et sans reproche, et demande ce qui s'est passé. Une journée peut être pleine sans qu'une case soit cochée.
 
-Ensuite, trois temps courts : ce qui a été appris · ce qui est à ajuster · le lâcher-prise (« est-ce que tu portes uniquement ce qui dépend de toi ? »). Termine par une intention pour demain, pas par une liste de tâches.`
+Ensuite, trois temps courts : ce qui a été appris · ce qui est à ajuster · le lâcher-prise (« est-ce que tu portes uniquement ce qui dépend de toi ? »).
+
+PUIS APPELLE « clore_bilan ». Ce n'est pas facultatif : sans cet appel, la journée n'est pas close dans son espace, elle le verra encore marqué « à faire » et on lui redemandera demain. Reprends ses mots à elle dans chaque champ.
+
+Termine par une intention pour demain, pas par une liste de tâches.`
         : `\n⚠ C'est le bilan de la semaine : accomplissements, apprentissages, blocages, puis les priorités de la semaine à venir.
 
 Ouvre par ce que tu SAIS de sa semaine — le socle ci-dessus contient ses projets, l'avancement de ses caps et ses actions. Ne lui fais pas raconter ce qui est déjà enregistré : rends-le-lui, puis demande ce que ça lui fait.
 
-Tu peux proposer UNE hypothèse sur un schéma que tu observes (« à toi de me dire si je lis juste »).`,
+Tu peux proposer UNE hypothèse sur un schéma que tu observes (« à toi de me dire si je lis juste »).
+
+À la fin, APPELLE « clore_bilan » avec la cadence « semaine ». Sans cet appel, rien n'est inscrit.`,
     );
   }
 
