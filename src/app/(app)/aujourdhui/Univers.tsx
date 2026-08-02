@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { DesertScene, ForestScene, OceanScene } from "@/components/Scenes";
+import { Pastille } from "@/components/Pastille";
 
 export type VueUnivers = {
   cle: string;
@@ -75,11 +76,9 @@ export function BandeauUnivers({
                 <span className="min-w-0 truncate text-[13px] font-semibold text-ink">
                   {u.nom}
                 </span>
-                {u.pastille > 0 && (
-                  <span className="flex h-5 min-w-5 flex-none items-center justify-center rounded-full bg-ink px-1.5 text-[10px] font-bold text-paper">
-                    {u.pastille > 9 ? "9+" : u.pastille}
-                  </span>
-                )}
+                <span className="flex-none">
+                  <Pastille nombre={u.pastille} taille="petite" />
+                </span>
               </span>
             </Link>
           );

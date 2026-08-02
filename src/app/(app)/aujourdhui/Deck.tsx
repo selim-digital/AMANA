@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DesertScene, ForestScene, OceanScene } from "@/components/Scenes";
+import { Pastille } from "@/components/Pastille";
 
 export type CarteUnivers = {
   cle: string;
@@ -166,11 +167,9 @@ export function Deck({
                   tableau de bord. */}
               <div className="relative h-[46%] overflow-hidden" style={{ background: c.ciel }}>
                 <Scene className="absolute inset-0 h-full w-full" />
-                {c.pastille > 0 && (
-                  <span className="absolute right-4 top-4 flex h-7 min-w-7 items-center justify-center rounded-full bg-ink px-2 text-xs font-bold text-paper shadow-lg">
-                    {c.pastille > 9 ? "9+" : c.pastille}
-                  </span>
-                )}
+                <span className="absolute right-4 top-4">
+                  <Pastille nombre={c.pastille} />
+                </span>
               </div>
 
               <div className="flex flex-col p-6">
