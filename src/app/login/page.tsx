@@ -62,7 +62,7 @@ export default function LoginPage() {
   if (magicSent) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-12">
-        <AmanaMark className="h-14 w-14" />
+        <AmanaMark eveil className="h-14 w-14" />
         <div className="step-enter flex max-w-sm flex-col gap-3 rounded-[22px] bg-surface p-6 text-center">
           <h1 className="voice-amana text-xl">Ton lien de connexion arrive.</h1>
           <p className="text-sm text-ink-soft">
@@ -83,7 +83,7 @@ export default function LoginPage() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-7 px-6 py-12">
       <div className="enter flex flex-col items-center gap-3 text-center">
-        <AmanaMark className="h-14 w-14" />
+        <AmanaMark eveil className="h-14 w-14" />
         <Wordmark />
         <p className="voice-amana max-w-xs text-lg text-ink-soft">Décharger. Clarifier. Avancer.</p>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AmanaMark } from "@/components/AmanaMark";
 
 type Nudge = { accroche: string; texte: string; cta: string; href: string };
 
@@ -66,7 +67,8 @@ export function NudgeFlottant() {
     <div className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-[calc(3.75rem+env(safe-area-inset-top))]">
       <div className="sheet-enter pointer-events-auto w-full max-w-md rounded-[22px] border border-gold/40 bg-surface p-5 shadow-2xl">
         <div className="flex items-start justify-between gap-3">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gold-deep">
+          <AmanaMark eveil className="h-8 w-8 flex-none" />
+          <span className="min-w-0 flex-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-gold-deep">
             {nudge.accroche}
           </span>
           <button

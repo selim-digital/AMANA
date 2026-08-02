@@ -17,8 +17,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {/* Plus de menu : on entre par les univers, tout se fait a l'interieur
           de celui ou l'on est. Ne reste que la marque et l'initiale. */}
       <Entete />
-      {/* pb-28 : le contenu passe au-dessus du micro flottant. */}
-      <div className="mx-auto w-full max-w-md pb-28 lg:max-w-3xl">{children}</div>
+      {/* pb-28 : le contenu passe au-dessus du micro flottant. Sur grand
+          ecran on s'elargit pour que tout tienne dans la hauteur — un
+          univers ne doit pas se parcourir en faisant defiler. */}
+      <div className="mx-auto w-full max-w-md pb-28 lg:max-w-5xl lg:pb-24">{children}</div>
       <InstallPrompt />
     </div>
   );
