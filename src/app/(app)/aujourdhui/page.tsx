@@ -17,6 +17,7 @@ import {
 import { BandeauUnivers, type VueUnivers } from "./Univers";
 import { Actions, Frise, RangeeObjets } from "./VueUnivers";
 import { Outil } from "./Outil";
+import { AttenteIci } from "./AttenteIci";
 import { ProjetsBuild } from "./ProjetsBuild";
 import { Deck } from "./Deck";
 import { MicroFlottant } from "@/components/MicroFlottant";
@@ -56,6 +57,24 @@ export default async function DashboardPage({
   }));
   // Les regles ne se chargent que la ou elles s'affichent.
   const regles = choisi === "align" ? await getRegles(userId) : [];
+  // Ce qui attend PRECISEMENT dans l'univers ou l'on est.
+  const iciEvts = evts.filter((x) => x.univers === actif);
+  const CALME = {
+    source: "Rien n'attend ici. Tes fondations sont posees — reviens quand tu voudras les revoir.",
+    build: "Rien n'attend ici. Tes projets sont a jour.",
+    align: "Rien n'attend ici. Reviens ce soir pour clore ta journee.",
+  } as const;
+  // Une notification appartient a l'univers de l'ecran vers lequel elle mene.
+  const universDuLien = (href: string | null): CleUnivers =>
+    !href
+      ? "build"
+      : href.includes("u=source") || href.startsWith("/deepdive")
+        ? "source"
+        : href.includes("u=align") || href.includes("mode=bilan") || href.includes("mode=blocage")
+          ? "align"
+          : "build";
+  const notifsIci = notifications.filter((n) => universDuLien(n.href) === actif);
+
   const raisonPlongee = evts.find(
     (x) => x.univers === "source" && x.href.startsWith("/deepdive"),
   )?.motif;
@@ -135,10 +154,19 @@ export default async function DashboardPage({
 
       <BandeauUnivers univers={vues} actif={actif} />
 
-      {/* Transverses : une notification ne depend pas de l'univers ou l'on est. */}
-      {notifications.length > 0 && (
+      {/* Ce qui attend ICI, nomme. Une pastille annonce un nombre : elle ne
+          dit pas ce qu'on vient faire. */}
+      <AttenteIci
+        motifs={iciEvts.map((x) => x.motif)}
+        href={iciEvts[0]?.href ?? null}
+        calme={CALME[actif]}
+      />
+
+      {/* Les notifications de cet univers seulement : les memes partout ne
+          voulaient plus rien dire. */}
+      {notifsIci.length > 0 && (
         <Notifications
-          notifs={notifications.map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href }))}
+          notifs={notifsIci.map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href }))}
         />
       )}
 
