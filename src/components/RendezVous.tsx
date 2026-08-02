@@ -99,7 +99,7 @@ export function RendezVous({
 
   return (
     <div
-      className="veil-enter fixed inset-0 z-[70] flex items-end justify-center bg-ink/45 p-4 backdrop-blur-[2px] sm:items-center"
+      className="veil-enter fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-ink/45 p-4 backdrop-blur-[2px]"
       onClick={() => setPush(null)}
       role="dialog"
       aria-modal="true"

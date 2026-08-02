@@ -63,7 +63,7 @@ export function NudgeFlottant() {
   if (!visible || !nudge) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-4 pb-[calc(6rem+env(safe-area-inset-bottom))]">
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-[calc(3.75rem+env(safe-area-inset-top))]">
       <div className="sheet-enter pointer-events-auto w-full max-w-md rounded-[22px] border border-gold/40 bg-surface p-5 shadow-2xl">
         <div className="flex items-start justify-between gap-3">
           <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gold-deep">
