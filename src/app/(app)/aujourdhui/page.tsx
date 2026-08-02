@@ -21,7 +21,6 @@ import { AttenteIci } from "./AttenteIci";
 import { ProjetsBuild } from "./ProjetsBuild";
 import { Deck } from "./Deck";
 import { MicroFlottant } from "@/components/MicroFlottant";
-import { NudgeFlottant } from "@/components/NudgeFlottant";
 import { RendezVous } from "@/components/RendezVous";
 import { DemandePosition } from "@/components/DemandePosition";
 
@@ -123,7 +122,6 @@ export default async function DashboardPage({
         ombre={profile?.ombre ?? 1}
       />
       <MicroFlottant />
-      <NudgeFlottant />
     </>
   );
 

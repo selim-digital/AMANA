@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendNotification } from "@/lib/email";
+import { pousser } from "@/lib/push";
 
 export const maxDuration = 300;
 
@@ -30,6 +31,7 @@ export async function GET(req: Request) {
 
   let creees = 0;
   let envoyees = 0;
+  let poussees = 0;
 
   for (const u of users) {
     const [faites, restantes, intention, aValider] = await Promise.all([
@@ -103,6 +105,15 @@ export async function GET(req: Request) {
     });
     creees += 1;
 
+    // La notification poussee atteint qui n'ouvre pas l'application — le seul
+    // canal qui vaille le jour ou l'on a oublie AMANA.
+    poussees += await pousser(u.id, {
+      titre,
+      corps: lignes.join(" "),
+      href: "/conversation?mode=bilan",
+      fil: "bilan",
+    });
+
     // L'email de fin de journée est le seul quotidien : il ne se cumule donc
     // pas avec les relances d'absence, plafonnées ailleurs.
     if (u.notifyEmail && u.email) {
@@ -117,5 +128,5 @@ export async function GET(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, examines: users.length, creees, envoyees });
+  return NextResponse.json({ ok: true, examines: users.length, creees, envoyees, poussees });
 }
