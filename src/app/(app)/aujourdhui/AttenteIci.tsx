@@ -33,7 +33,7 @@ export function AttenteIci({
 
   return (
     <section
-      className="enter rounded-[18px] border-l-[3px] border-gold bg-surface px-4 py-3.5"
+      className="enter appelle rounded-[18px] border-l-[3px] border-gold bg-surface px-4 py-3.5"
       style={{ "--i": 1 } as React.CSSProperties}
     >
       <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gold-deep">
