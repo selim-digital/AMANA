@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getProfile } from "@/lib/data";
 import { Entete } from "@/components/Entete";
+import { Ouverture } from "@/components/Ouverture";
 import { InstallPrompt } from "@/components/InstallPrompt";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -14,6 +15,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-dvh overflow-x-hidden">
+      {/* La marque s'eveille au lancement, une fois par session. */}
+      <Ouverture />
       {/* Plus de menu : on entre par les univers, tout se fait a l'interieur
           de celui ou l'on est. Ne reste que la marque et l'initiale. */}
       <Entete />
