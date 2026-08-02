@@ -400,3 +400,21 @@ svg:not(.eveil) > .halo-or { display: none; }
   .ouverture-nom,
   .ouverture-mot { animation: none; opacity: 1; transform: none; }
 }
+
+/* L'onde des pastilles : elle s'échappe du rond et s'efface. Deux passes
+   décalées suffisent à créer un rythme sans clignotement. */
+@keyframes onde {
+  0%   { transform: scale(1);   opacity: 0.55; }
+  70%  { transform: scale(2.1); opacity: 0; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+.onde {
+  animation: onde 2.4s var(--ease-out) infinite;
+}
+.onde-2 {
+  animation-delay: 1.2s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onde { animation: none; opacity: 0; }
+}
