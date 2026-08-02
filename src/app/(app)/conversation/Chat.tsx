@@ -9,7 +9,14 @@ import { preparerFichier, type PieceJointe } from "@/lib/fichiers";
 
 type Msg = { role: "user" | "assistant"; content: string };
 type Historique = { id: string; title: string; projet: string | null; nb: number; date: string };
-type Cadrage = { titre: string; sousTitre: string; ouverture: string; amorces: string[] };
+type Cadrage = {
+  titre: string;
+  sousTitre: string;
+  ouverture: string;
+  amorces: string[];
+};
+/** Ce qui a ete mene a terme aujourd'hui, affiche a l'ouverture du bilan. */
+type Releve = { faites: string[]; essentiel: string | null; essentielFait: boolean };
 type Sujet = { projet?: string; tache?: string; etape?: string; mode?: string };
 
 /** Détecte la proposition d'action dans la réponse (l'IA annonce, l'UI valide). */
@@ -29,6 +36,7 @@ export function Chat({
   messagesInitiaux,
   historique,
   messageInitial,
+  releve,
 }: {
   cadrage: Cadrage;
   sujet: Sujet;
@@ -38,6 +46,7 @@ export function Chat({
   historique: Historique[];
   /** Dicté depuis le micro central : part tout seul à l'ouverture. */
   messageInitial?: string;
+  releve?: Releve;
 }) {
   const router = useRouter();
   const [messages, setMessages] = useState<Msg[]>(messagesInitiaux);
@@ -243,6 +252,21 @@ export function Chat({
         {messages.length === 0 && (
           <div className="flex flex-col gap-3 pt-8">
             <p className="voice-amana text-center text-lg text-ink-soft">{cadrage.ouverture}</p>
+
+            {/* Dire « trois actions » sans les nommer, c'est ne rendre qu'a
+                moitie. La liste est la matiere du bilan. */}
+            {releve && releve.faites.length > 0 && (
+              <ul className="enter mx-auto flex w-full max-w-sm flex-col gap-1.5 rounded-[18px] border border-gold/30 bg-gold-soft/50 px-4 py-3.5">
+                {releve.faites.map((t, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-ink">
+                    <svg viewBox="0 0 12 12" className="mt-[5px] h-3 w-3 flex-none stroke-gold-deep" fill="none" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2 6.5 4.5 9 10 3" />
+                    </svg>
+                    <span className="flex-1">{t}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
             {cadrage.amorces.map((a, i) => (
               <button
                 key={a}
