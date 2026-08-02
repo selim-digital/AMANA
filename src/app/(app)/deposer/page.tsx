@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { commitDecharge, type ProjetPropose, type TachePropose } from "@/lib/actions";
 import { Dictee } from "@/components/Dictee";
@@ -29,6 +29,7 @@ const LIBELLE_KIND = { tache: "Tâche", rappel: "Rappel", decision: "Décision" 
 export default function DeposerPage() {
   const router = useRouter();
   const [texte, setTexte] = useState("");
+  const avantDictee = useRef("");
   const [res, setRes] = useState<Resultat | null>(null);
   const [ouvert, setOuvert] = useState<number | null>(0);
   const [analyse, setAnalyse] = useState(false);
@@ -86,8 +87,13 @@ export default function DeposerPage() {
         {/* Vider sa tête au clavier demande un effort que beaucoup ne
             fournissent pas. À l'oral, le vrac sort tel qu'il vient. */}
         <div className="flex items-center gap-3">
+          {/* Le texte deja saisi est retenu au demarrage : sans cela, chaque
+              resultat provisoire venait s'ajouter au precedent. */}
           <Dictee
-            onTexte={(t) => setTexte((avant) => (avant.trim() ? `${avant.trim()}\n${t}` : t))}
+            onDebut={() => { avantDictee.current = texte; }}
+            onTexte={(t) =>
+              setTexte(avantDictee.current.trim() ? `${avantDictee.current.trim()}\n${t}` : t)
+            }
           />
           <button
             onClick={structurer}

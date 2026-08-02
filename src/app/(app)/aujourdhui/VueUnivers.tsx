@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { toggleTask } from "@/lib/actions";
+import { renommerTache, supprimerTache, toggleTask } from "@/lib/actions";
 
 type Objet = {
   id: string;
@@ -208,6 +208,9 @@ export function Actions({ actions, cochable }: { actions: ActionVue[]; cochable:
   const router = useRouter();
   const [pending, start] = useTransition();
   const [coche, setCoche] = useState<string | null>(null);
+  /** L'action en cours de correction, et son libellé en cours de saisie. */
+  const [edite, setEdite] = useState<string | null>(null);
+  const [titre, setTitre] = useState("");
 
   const restantes = actions.filter((a) => !a.faite);
   const faites = actions.filter((a) => a.faite);
@@ -218,7 +221,58 @@ export function Actions({ actions, cochable }: { actions: ActionVue[]; cochable:
         {cochable ? "À mener ici" : "Hypothèses à trancher"}
       </span>
 
-      {restantes.map((a) => (
+      {restantes.map((a) =>
+        edite === a.id ? (
+          /* Une action mal formulée — ou qui n'en était pas une — doit pouvoir
+             être corrigée ou écartée. Sans cela on garde des lignes qu'on
+             n'ose ni faire ni supprimer, et la liste cesse d'être fiable. */
+          <div
+            key={a.id}
+            className="step-enter flex flex-col gap-2 rounded-[16px] border border-gold/40 bg-surface p-3"
+          >
+            <input
+              autoFocus
+              value={titre}
+              onChange={(e) => setTitre(e.target.value)}
+              maxLength={200}
+              className="w-full rounded-[12px] border border-ink/15 bg-paper px-3 py-2.5 text-sm outline-none focus:border-gold"
+            />
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() =>
+                  start(async () => {
+                    await renommerTache(a.id, titre);
+                    setEdite(null);
+                    router.refresh();
+                  })
+                }
+                disabled={pending || titre.trim().length < 2}
+                className="press rounded-full bg-ink px-4 py-2 text-[11px] font-semibold text-paper disabled:opacity-40"
+              >
+                Enregistrer
+              </button>
+              <button
+                onClick={() => setEdite(null)}
+                className="press rounded-full px-3 py-2 text-[11px] text-ink-faint"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() =>
+                  start(async () => {
+                    await supprimerTache(a.id);
+                    setEdite(null);
+                    router.refresh();
+                  })
+                }
+                disabled={pending}
+                className="press ml-auto rounded-full border border-ink/15 px-3 py-2 text-[11px] font-semibold text-[#B8543F]"
+              >
+                Ce n&apos;est pas une action
+              </button>
+            </div>
+          </div>
+        ) : (
         <div
           key={a.id}
           className="flex items-center gap-3 rounded-[16px] bg-surface-2 px-4 py-3.5 text-sm"
@@ -268,8 +322,27 @@ export function Actions({ actions, cochable }: { actions: ActionVue[]; cochable:
               Trancher
             </a>
           ) : null}
+
+          {cochable && (
+            <button
+              type="button"
+              aria-label={`Corriger « ${a.titre} »`}
+              onClick={() => {
+                setTitre(a.titre);
+                setEdite(a.id);
+              }}
+              className="press flex h-7 w-7 flex-none items-center justify-center rounded-full text-ink-faint hover:bg-surface"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden>
+                <circle cx="5" cy="12" r="1.7" />
+                <circle cx="12" cy="12" r="1.7" />
+                <circle cx="19" cy="12" r="1.7" />
+              </svg>
+            </button>
+          )}
         </div>
-      ))}
+        ),
+      )}
 
       {/* Ce qui est fait reste visible : on peut revenir sur un clic accidentel. */}
       {faites.map((a) => (

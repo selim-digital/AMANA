@@ -10,17 +10,30 @@ import { useEffect, useRef, useState } from "react";
  * chose se dit en quinze secondes.
  *
  * On s'appuie sur la reconnaissance vocale du navigateur : rien ne part vers
- * un service tiers, rien à facturer, et ça marche hors ligne sur certains
- * appareils. Là où le navigateur ne la propose pas, le bouton ne s'affiche
- * simplement pas — jamais un bouton mort.
+ * un service tiers, rien à facturer. Là où le navigateur ne la propose pas,
+ * le bouton ne s'affiche pas — jamais un bouton mort.
+ *
+ * ── Pourquoi le texte se répétait ──
+ *
+ * L'implémentation précédente accumulait les segments définitifs au fil des
+ * événements. Or le moteur d'Android renvoie régulièrement des résultats déjà
+ * transmis, et se relance de lui-même après un silence en réinitialisant ses
+ * index : chaque re-livraison s'ajoutait au lieu de remplacer.
+ *
+ * Ici on ne cumule plus rien : à chaque événement, la transcription est
+ * RECONSTRUITE depuis le premier résultat. L'opération est idempotente, donc
+ * une re-livraison ne peut plus dupliquer. Seuls les redémarrages du moteur
+ * sont mémorisés à part, dans `socleRef`.
  */
 
 type Reco = {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
+  maxAlternatives: number;
   start: () => void;
   stop: () => void;
+  abort: () => void;
   onresult: ((e: SpeechRecognitionEventLike) => void) | null;
   onerror: ((e: { error?: string }) => void) | null;
   onend: (() => void) | null;
@@ -39,15 +52,25 @@ function moteur(): (new () => Reco) | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
+/** Recolle deux morceaux sans coller les mots ni doubler les espaces. */
+function joindre(a: string, b: string) {
+  if (!a) return b;
+  if (!b) return a;
+  return `${a.replace(/\s+$/, "")} ${b.replace(/^\s+/, "")}`;
+}
+
 export function Dictee({
   onTexte,
+  onDebut,
   onFin,
   auto = false,
   className = "",
 }: {
-  /** Reçoit le texte reconnu, au fil de la parole. */
+  /** Reçoit la transcription COMPLÈTE de la session, à remplacer telle quelle. */
   onTexte: (texte: string, definitif: boolean) => void;
-  /** Appelé quand la dictée s'arrête d'elle-même. */
+  /** Appelé au démarrage — pour retenir ce qui était déjà saisi. */
+  onDebut?: () => void;
+  /** Appelé quand la dictée s'arrête pour de bon. */
   onFin?: () => void;
   /** Démarre dès l'affichage — pour un écran ouvert exprès pour dicter. */
   auto?: boolean;
@@ -56,8 +79,24 @@ export function Dictee({
   const [dispo, setDispo] = useState(false);
   const [ecoute, setEcoute] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+
   const recoRef = useRef<Reco | null>(null);
-  const acquisRef = useRef("");
+  /** Ce qui a été dit avant le dernier redémarrage du moteur. */
+  const socleRef = useRef("");
+  /** L'intention de la personne : le moteur peut s'arrêter, pas elle. */
+  const vouluRef = useRef(false);
+  /** La derniere transcription emise : on la reprend au redemarrage du moteur. */
+  const derniereRef = useRef("");
+  const onTexteRef = useRef(onTexte);
+  onTexteRef.current = onTexte;
+
+  /** Emet la transcription et la retient. */
+  const emettre = (t: string, definitif: boolean) => {
+    derniereRef.current = t;
+    onTexteRef.current(t, definitif);
+  };
+  const emettreRef = useRef(emettre);
+  emettreRef.current = emettre;
 
   useEffect(() => {
     const M = moteur();
@@ -68,42 +107,59 @@ export function Dictee({
     reco.lang = "fr-FR";
     reco.continuous = true;
     reco.interimResults = true;
+    reco.maxAlternatives = 1;
 
     reco.onresult = (e) => {
+      // Reconstruction complète, jamais d'accumulation : c'est ce qui rend
+      // l'opération idempotente et interdit les répétitions.
+      let definitif = "";
       let provisoire = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const bout = e.results[i][0].transcript;
-        if (e.results[i].isFinal) acquisRef.current += bout;
-        else provisoire += bout;
+      for (let i = 0; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (r.isFinal) definitif = joindre(definitif, r[0].transcript);
+        else provisoire = joindre(provisoire, r[0].transcript);
       }
-      onTexte((acquisRef.current + provisoire).trim(), false);
+      emettreRef.current(joindre(joindre(socleRef.current, definitif), provisoire).trim(), false);
     };
 
     reco.onerror = (e) => {
-      // Un refus de micro doit se dire ; un silence n'est pas une erreur.
+      // Un refus de micro se dit ; un silence n'est pas une erreur.
       if (e.error === "not-allowed" || e.error === "service-not-allowed") {
         setErreur("Micro refusé. Autorise-le dans les réglages du navigateur.");
+        vouluRef.current = false;
       } else if (e.error && e.error !== "no-speech" && e.error !== "aborted") {
         setErreur("La dictée s'est interrompue.");
       }
-      setEcoute(false);
     };
 
     reco.onend = () => {
+      // Le moteur d'Android se coupe après quelques secondes de silence. Tant
+      // que la personne n'a pas touché le bouton, on repart — mais en gardant
+      // le déjà-dit à part, puisque ses index vont repartir de zéro.
+      if (vouluRef.current) {
+        socleRef.current = derniereRef.current;
+        try {
+          reco.start();
+          return;
+        } catch {
+          /* le moteur refuse de repartir : on s'arrête proprement */
+        }
+      }
       setEcoute(false);
-      if (acquisRef.current.trim()) onTexte(acquisRef.current.trim(), true);
+      if (derniereRef.current.trim()) emettreRef.current(derniereRef.current.trim(), true);
       onFin?.();
     };
 
     recoRef.current = reco;
     return () => {
+      vouluRef.current = false;
       reco.onresult = null;
       reco.onerror = null;
       reco.onend = null;
       try {
-        reco.stop();
+        reco.abort();
       } catch {
-        // Déjà arrêtée : rien à faire.
+        /* déjà arrêtée */
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -118,16 +174,23 @@ export function Dictee({
     const reco = recoRef.current;
     if (!reco) return;
     setErreur(null);
+
     if (ecoute) {
+      vouluRef.current = false;
       reco.stop();
       return;
     }
-    acquisRef.current = "";
+
+    socleRef.current = "";
+    derniereRef.current = "";
+    vouluRef.current = true;
+    onDebut?.();
     try {
       reco.start();
       setEcoute(true);
     } catch {
-      // Un double démarrage lève : on ignore, l'état est déjà bon.
+      // Un double démarrage lève : l'état est déjà bon.
+      setEcoute(true);
     }
   }
 
@@ -140,21 +203,23 @@ export function Dictee({
         onClick={basculer}
         aria-label={ecoute ? "Arrêter la dictée" : "Dicter à la voix"}
         aria-pressed={ecoute}
-        className={`press flex h-11 w-11 flex-none items-center justify-center rounded-full border transition-colors ${
+        className={`press relative flex h-11 w-11 flex-none items-center justify-center rounded-full border transition-colors ${
           ecoute
             ? "border-gold bg-gold text-[#12100D]"
             : "border-ink/15 bg-surface text-ink-soft hover:border-gold"
         }`}
       >
         {ecoute && (
-          <span className="absolute h-11 w-11 animate-ping rounded-full bg-gold/40" aria-hidden />
+          <span className="onde absolute inset-0 rounded-full bg-gold" aria-hidden />
         )}
         <svg viewBox="0 0 24 24" className="relative h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           <rect x="9" y="3" width="6" height="11" rx="3" />
           <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
         </svg>
       </button>
-      {erreur && <span className="mt-1 max-w-[10rem] text-center text-[10px] text-[#B8543F]">{erreur}</span>}
+      {erreur && (
+        <span className="mt-1 max-w-[10rem] text-center text-[10px] text-[#B8543F]">{erreur}</span>
+      )}
     </div>
   );
 }

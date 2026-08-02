@@ -720,3 +720,43 @@ export async function basculerRegle(regleId: string) {
   }
   revalidatePath("/aujourdhui");
 }
+
+// ─────────────────────────── Corriger une action ───────────────────────────
+
+/**
+ * Renommer une action.
+ *
+ * Ce qui vient de la décharge ou de la conversation est parfois mal découpé,
+ * ou n'était pas une action du tout. Sans moyen de corriger, on se retrouve
+ * avec des lignes qu'on n'ose ni faire ni supprimer — et la liste cesse
+ * d'être fiable.
+ */
+export async function renommerTache(taskId: string, titre: string) {
+  const userId = await requireUserId();
+  const propre = titre.trim();
+  if (propre.length < 2 || propre.length > 200) return;
+  await prisma.task.updateMany({ where: { id: taskId, userId }, data: { title: propre } });
+  revalidatePath("/aujourdhui");
+}
+
+/** Écarter une action. Suppression douce : elle sort des vues, pas de l'histoire. */
+export async function supprimerTache(taskId: string) {
+  const userId = await requireUserId();
+  await prisma.task.updateMany({
+    where: { id: taskId, userId },
+    data: { deletedAt: new Date() },
+  });
+  await logEvent(userId, "task_deleted", {});
+  revalidatePath("/aujourdhui");
+}
+
+/** Rattacher une action à un projet, ou l'en détacher. */
+export async function rattacherTache(taskId: string, projectId: string | null) {
+  const userId = await requireUserId();
+  if (projectId) {
+    const p = await prisma.project.findFirst({ where: { id: projectId, userId } });
+    if (!p) return;
+  }
+  await prisma.task.updateMany({ where: { id: taskId, userId }, data: { projectId } });
+  revalidatePath("/aujourdhui");
+}

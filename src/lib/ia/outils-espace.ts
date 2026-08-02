@@ -246,6 +246,20 @@ export function outilsEspace(userId: string) {
           },
         });
         if (!okr) return `« ${p.name} » n'a pas encore de cap pour ce trimestre.`;
+
+        // Ce qui a ete fait depuis trois semaines : de quoi deduire une
+        // avancee sans avoir a la demander.
+        const accomplies = await prisma.task.findMany({
+          where: {
+            projectId: p.id,
+            deletedAt: null,
+            status: "DONE",
+            updatedAt: { gte: new Date(Date.now() - 21 * 86_400_000) },
+          },
+          orderBy: { updatedAt: "desc" },
+          take: 15,
+          select: { title: true, updatedAt: true },
+        });
         return {
           projet: p.name,
           objectif: okr.objective,
@@ -254,6 +268,9 @@ export function outilsEspace(userId: string) {
             cible: k.target,
             avancement: `${k.current} %`,
           })),
+          accompliesDepuisTroisSemaines: accomplies.map(
+            (t) => `${t.title} (le ${t.updatedAt.toLocaleDateString("fr-FR")})`,
+          ),
         };
       },
     }),
