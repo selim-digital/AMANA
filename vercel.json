@@ -3,6 +3,10 @@
   "buildCommand": "prisma generate && (if [ -n \"$DATABASE_URL\" ]; then prisma db push --accept-data-loss; else echo 'Pas de DATABASE_URL — schema non synchronise (connecter Neon a Vercel)'; fi) && next build",
   "crons": [
     {
+      "path": "/api/cron/rendezvous",
+      "schedule": "0 * * * *"
+    },
+    {
       "path": "/api/cron/signaux",
       "schedule": "0 8 * * 1"
     },
