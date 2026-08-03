@@ -73,7 +73,7 @@ export async function GET(req: Request) {
         kind: "encouragement",
         title: "Ta semaine avance",
         body: `${faitesSemaine} actions terminées ces sept derniers jours. C'est le rythme qui compte, pas l'intensité.`,
-        href: "/aujourdhui",
+        href: "/aujourdhui?u=build",
       };
     } else if (sansCap.length > 0) {
       signal = {
@@ -87,7 +87,7 @@ export async function GET(req: Request) {
         kind: "relance",
         title: "Une action t'attend",
         body: `« ${tachesVieilles[0].title} » attend depuis une semaine. Peut-être qu'elle peut être réduite à dix minutes — ou qu'elle n'est plus la priorité.`,
-        href: "/aujourdhui",
+        href: "/aujourdhui?u=build",
       };
     }
 
