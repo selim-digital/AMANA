@@ -143,7 +143,7 @@ export async function evenements(userId: string): Promise<Evenement[]> {
     e.push({
       univers: "build",
       motif: "Ton intention du jour n'est pas posée",
-      href: "/aujourdhui",
+      href: "/aujourdhui?u=build",
     });
   }
   for (const p of projets.filter((x) => !x.okrs.length)) {
@@ -209,7 +209,7 @@ export async function evenements(userId: string): Promise<Evenement[]> {
     e.push({
       univers: "align",
       motif: `${notifs} message${notifs > 1 ? "s" : ""} d'AMANA non lu${notifs > 1 ? "s" : ""}`,
-      href: "/aujourdhui",
+      href: "/aujourdhui?u=align",
     });
   }
 

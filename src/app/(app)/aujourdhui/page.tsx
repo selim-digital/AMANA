@@ -144,10 +144,10 @@ export default async function DashboardPage({
   // propre au monde, son outil, et le micro. Tout le reste appartenait à un
   // tableau de bord — et c'est précisément ce qu'AMANA ne doit pas être.
   return (
-    // Sur grand écran, l'univers tient dans la hauteur : on ne parcourt pas
-    // un monde en faisant défiler. Le bandeau reste en tête, le reste se
-    // répartit en deux colonnes qui défilent chacune de leur côté si besoin.
-    <main className="flex flex-col gap-5 px-5 py-6 lg:h-[calc(100dvh-3.5rem)] lg:gap-4 lg:overflow-hidden lg:py-5">
+    // Sur grand écran, deux colonnes — mais la PAGE défile, jamais les blocs.
+    // Forcer 100dvh faisait apparaître une barre dans chaque carte : on se
+    // retrouvait avec quatre ascenseurs pour un seul écran.
+    <main className="flex flex-col gap-5 px-5 py-6 lg:gap-6 lg:py-8">
       {veille}
 
       <BandeauUnivers univers={vues} actif={actif} />
@@ -168,7 +168,7 @@ export default async function DashboardPage({
         />
       )}
 
-      <div className="flex min-h-0 flex-col gap-5 lg:grid lg:min-h-0 lg:grid-cols-2 lg:items-start lg:gap-5 lg:overflow-hidden [&>*]:min-w-0 lg:[&>*]:max-h-full lg:[&>*]:overflow-y-auto">
+      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 [&>*]:min-w-0">
       {/* ─────────── La Source : le chemin, et la plongée ─────────── */}
       {actif === "source" && (
         <>
