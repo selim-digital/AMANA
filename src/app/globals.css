@@ -504,3 +504,33 @@ svg:not(.eveil) > .halo-or { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .reflechit, .reflechit .pt3 { animation: none; }
 }
+
+/* ─────────── La barre de défilement, partout ───────────
+   Celle du navigateur est grise, large, et ramène l'œil hors de la marque.
+   On la reprend à l'échelle de la page comme on l'a fait pour le fil : fine,
+   dorée, sans piste visible. `scrollbar-gutter: stable` évite que le contenu
+   sursaute d'une poignée de pixels quand elle apparaît. */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--gold) 45%, transparent) transparent;
+  scrollbar-gutter: stable;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--gold) 42%, transparent);
+  border-radius: 99px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--gold) 75%, transparent);
+}
+/* Le coin entre les deux barres ne doit pas rester blanc. */
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
